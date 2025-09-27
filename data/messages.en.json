@@ -1,0 +1,49 @@
+{
+  "nav": {
+    "home": "Home",
+    "collections": "Collections",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title1": "Discover Your Style",
+    "subtitle1": "Premium fashion for the modern lifestyle",
+    "title2": "New Collection",
+    "subtitle2": "Elevate your wardrobe with our latest arrivals",
+    "title3": "Sale Up to 50%",
+    "subtitle3": "Don't miss out on our biggest sale of the year",
+    "cta": "Shop Now"
+  },
+  "categories": {
+    "title": "Shop by Category",
+    "tshirts": "T-Shirts",
+    "hoodies": "Hoodies",
+    "pants": "Pants",
+    "jackets": "Jackets",
+    "shoes": "Shoes"
+  },
+  "products": {
+    "title": "Featured Products",
+    "addToCart": "Add to Cart",
+    "sale": "Sale",
+    "outOfStock": "Out of Stock",
+    "size": "Size",
+    "color": "Color",
+    "quantity": "Quantity",
+    "description": "Description",
+    "relatedProducts": "Related Products"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "continueShopping": "Continue Shopping"
+  },
+  "footer": {
+    "copyright": "© 2025 StyleHub. All rights reserved.",
+    "about": "About Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}
