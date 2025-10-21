@@ -63,7 +63,7 @@ export default function CartDrawer() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {items.map((item) => (
+                    {Array.isArray(items) && items.map((item) => (
                       <motion.div
                         key={`${item.id}-${item.size}-${item.color}`}
                         initial={{ opacity: 0, y: 20 }}

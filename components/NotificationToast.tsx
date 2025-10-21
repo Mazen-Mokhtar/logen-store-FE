@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { useNotificationStore } from '@/lib/store';
@@ -19,13 +18,13 @@ const colors = {
   info: 'bg-blue-50 border-blue-200 text-blue-800',
 };
 
-export default function NotificationToast() {
+function NotificationToast() {
   const { notifications, removeNotification } = useNotificationStore();
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
       <AnimatePresence>
-        {notifications.map((notification) => {
+        {Array.isArray(notifications) && notifications.map((notification) => {
           const Icon = icons[notification.type];
           const colorClass = colors[notification.type];
 
@@ -57,3 +56,5 @@ export default function NotificationToast() {
     </div>
   );
 }
+
+export default NotificationToast;

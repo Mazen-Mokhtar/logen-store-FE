@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { useInView } from 'react-intersection-observer';
 import { useMessages } from '@/hooks/useMessages';
 import { useCategories } from '@/hooks/useCategories';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function CategoryStrip() {
   const messages = useMessages();
   const { categories, loading, error } = useCategories({ limit: 5 });
+  const { locale } = useLocale();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -18,16 +20,16 @@ export default function CategoryStrip() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
-    if (inView && !imagesLoaded && categories.length > 0) {
+    if (inView && !imagesLoaded && categories?.length > 0) {
       // Preload category images
-      const imagePromises = categories.map((category) => {
+      const imagePromises = categories?.map((category) => {
         return new Promise((resolve) => {
           const img = new window.Image();
           img.onload = resolve;
           img.onerror = resolve;
           img.src = category.logo.secure_url;
         });
-      });
+      }) || [];
       
       Promise.all(imagePromises).then(() => {
         setImagesLoaded(true);
@@ -66,13 +68,13 @@ export default function CategoryStrip() {
           <>
             {/* Desktop Grid */}
             <div className="hidden md:grid grid-cols-2 lg:grid-cols-5 gap-6">
-              {categories.slice(0, 5).map((category, index) => (
+              {Array.isArray(categories) && categories.slice(0, 5).map((category, index) => (
                 <div
                   key={category._id}
                   className="category-card"
                   style={{ willChange: 'transform' }}
                 >
-                  <Link href={`/collections?category=${encodeURIComponent(category._id)}`} className="group block">
+                  <Link href={`/${locale}/collections?category=${encodeURIComponent(category._id)}`} className="group block">
                     <div className="relative aspect-square overflow-hidden rounded-2xl">
                       <Image
                         src={category.logo.secure_url}
@@ -82,7 +84,7 @@ export default function CategoryStrip() {
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         loading={index < 2 ? 'eager' : 'lazy'}
                         placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                       />
                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -99,13 +101,13 @@ export default function CategoryStrip() {
             {/* Mobile Horizontal Scroll */}
             <div className="md:hidden">
               <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-                {categories.slice(0, 5).map((category, index) => (
+                {Array.isArray(categories) && categories.slice(0, 5).map((category, index) => (
                   <div
                     key={category._id}
                     className="category-card flex-shrink-0"
                     style={{ willChange: 'transform' }}
                   >
-                    <Link href={`/collections?category=${encodeURIComponent(category._id)}`} className="group block">
+                    <Link href={`/${locale}/collections?category=${encodeURIComponent(category._id)}`} className="group block">
                       <div className="relative w-40 h-40 overflow-hidden rounded-2xl">
                         <Image
                           src={category.logo.secure_url}
@@ -115,7 +117,7 @@ export default function CategoryStrip() {
                           sizes="160px"
                           loading="lazy"
                           placeholder="blur"
-                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                         />
                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
                         <div className="absolute inset-0 flex items-center justify-center">

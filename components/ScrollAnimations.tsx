@@ -8,6 +8,7 @@ const GSAPScrollAnimations = dynamic(() => import('./GSAPScrollAnimations'), {
   ssr: false,
   loading: () => null,
 });
+
 interface ScrollAnimationsProps {
   children: React.ReactNode;
 }
@@ -15,15 +16,22 @@ interface ScrollAnimationsProps {
 export default function ScrollAnimations({ children }: ScrollAnimationsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    // Add a small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div ref={containerRef}>
       {children}
-      {isClient && <GSAPScrollAnimations containerRef={containerRef} />}
+      {isClient && isReady && <GSAPScrollAnimations containerRef={containerRef} />}
     </div>
   );
 }

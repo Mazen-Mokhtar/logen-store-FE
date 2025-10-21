@@ -14,7 +14,7 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   isOpen: boolean;
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -44,13 +44,13 @@ export const useCartStore = create<CartStore>()(
               item.id === existingItem.id &&
               item.size === existingItem.size &&
               item.color === existingItem.color
-                ? { ...item, quantity: item.quantity + 1 }
+                ? { ...item, quantity: item.quantity + (newItem.quantity || 1) }
                 : item
             ),
           });
         } else {
           set({
-            items: [...items, { ...newItem, quantity: 1 }],
+            items: [...items, { ...newItem, quantity: newItem.quantity || 1 }],
           });
         }
       },
@@ -88,13 +88,15 @@ export const useCartStore = create<CartStore>()(
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       getTotalItems: () => {
-        return get().items.reduce((total, item) => total + item.quantity, 0);
+        const items = get().items;
+        return Array.isArray(items) ? items.reduce((total, item) => total + item.quantity, 0) : 0;
       },
       getTotalPrice: () => {
-        return get().items.reduce(
+        const items = get().items;
+        return Array.isArray(items) ? items.reduce(
           (total, item) => total + item.price * item.quantity,
           0
-        );
+        ) : 0;
       },
     }),
     {
@@ -120,9 +122,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
   addNotification: (notification) => {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const currentNotifications = get().notifications;
     set({
       notifications: [
-        ...get().notifications,
+        ...(Array.isArray(currentNotifications) ? currentNotifications : []),
         {
           ...notification,
           id,
@@ -137,8 +140,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }, 5000);
   },
   removeNotification: (id) => {
+    const currentNotifications = get().notifications;
     set({
-      notifications: get().notifications.filter((n) => n.id !== id),
+      notifications: Array.isArray(currentNotifications) ? currentNotifications.filter((n) => n.id !== id) : [],
     });
   },
   clearNotifications: () => set({ notifications: [] }),

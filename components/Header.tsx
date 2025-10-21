@@ -11,6 +11,7 @@ import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { useAuth } from '@/lib/auth';
 import AuthModal from './AuthModal';
 import UserMenu from './UserMenu';
+import Logo from './Logo';
 
 // Lazy load language toggle to reduce initial bundle
 const LanguageToggle = dynamic(() => import('./LanguageToggle'), {
@@ -62,9 +63,12 @@ export default function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-gray-900">
-            StyleHub
-          </Link>
+          <Logo 
+            width={160} 
+            height={60} 
+            priority={true}
+            className="transition-all duration-300"
+          />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">

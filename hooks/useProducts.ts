@@ -57,9 +57,9 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsReturn
       });
 
       if (reset) {
-        setProducts(result.products);
+        setProducts(Array.isArray(result.products) ? result.products : []);
       } else {
-        setProducts(prev => [...prev, ...result.products]);
+        setProducts(prev => [...prev, ...(Array.isArray(result.products) ? result.products : [])]);
       }
       
       setPagination(result.pagination);
@@ -83,7 +83,7 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsReturn
         sort,
       });
 
-      setProducts(prev => [...prev, ...result.products]);
+      setProducts(prev => [...prev, ...(Array.isArray(result.products) ? result.products : [])]);
       setPagination(result.pagination);
     } catch (err) {
       setError(handleApiError(err));

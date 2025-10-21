@@ -74,7 +74,8 @@ class AuthService {
         throw new Error('No refresh token available');
       }
 
-      const { accessToken } = await apiClient.refreshToken(this.state.refreshToken);
+      const response = await apiClient.refreshToken(this.state.refreshToken);
+      const accessToken = response.accessToken;
       
       localStorage.setItem('authToken', accessToken);
       this.setState({
@@ -93,7 +94,9 @@ class AuthService {
   }
 
   private notifyListeners() {
-    this.listeners.forEach(listener => listener(this.state));
+    if (Array.isArray(this.listeners) && this.listeners.length > 0) {
+      this.listeners.forEach(listener => listener(this.state));
+    }
   }
 
   subscribe(listener: (state: AuthState) => void) {
@@ -115,15 +118,25 @@ class AuthService {
     try {
       const authData = await apiClient.login(email, password);
       
+      // Handle the actual backend response structure
+      // The server returns accessToken and refreshToken directly in the data object
+      const accessToken = authData.accessToken;
+      const refreshToken = authData.refreshToken;
+      const user = authData.user;
+
+      if (!accessToken || !user) {
+        throw new Error('Invalid response from server');
+      }
+      
       // Store auth data
-      localStorage.setItem('authToken', authData.tokens.accessToken);
-      localStorage.setItem('refreshToken', authData.tokens.refreshToken);
-      localStorage.setItem('userData', JSON.stringify(authData.user));
+      localStorage.setItem('authToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('userData', JSON.stringify(user));
 
       this.setState({
-        user: authData.user,
-        token: authData.tokens.accessToken,
-        refreshToken: authData.tokens.refreshToken,
+        user: user,
+        token: accessToken,
+        refreshToken: refreshToken,
         isAuthenticated: true,
         isLoading: false,
       });

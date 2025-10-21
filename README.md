@@ -1,6 +1,6 @@
-# Logen Store - E-commerce Platform
+# Logen E-commerce Platform
 
-A modern, full-stack e-commerce platform built with Next.js 13+ (App Router) frontend and NestJS backend, featuring RTL/Arabic support, GSAP animations, and a premium shopping experience.
+A modern, high-performance e-commerce platform built with Next.js 14, featuring internationalization, accessibility, SEO optimization, and comprehensive monitoring capabilities.
 
 ## 🌟 Features
 
@@ -167,14 +167,91 @@ PORT=3000
 NODE_ENV=production
 ```
 
-## 🐳 Docker Deployment
+## 🐳 Production Deployment
 
-The backend includes Docker support for easy deployment:
+### Vercel Deployment (Recommended)
 
-```bash
-cd backend
-docker-compose up -d
-```
+1. **Connect to Vercel**
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel --prod
+   ```
+
+2. **Environment Variables**
+   Set the following in Vercel dashboard:
+   ```env
+   NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.com
+   NEXT_PUBLIC_SITE_URL=https://your-domain.com
+   NEXT_PUBLIC_ANALYTICS_ID=your-ga-id
+   ```
+
+3. **Build Configuration**
+   The project includes optimized build settings in `next.config.js`:
+   - Automatic static optimization
+   - Image optimization with Sharp
+   - Compression and caching headers
+   - Bundle analysis tools
+
+### Docker Deployment
+
+1. **Frontend Dockerfile**
+   ```dockerfile
+   FROM node:18-alpine AS deps
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm ci --only=production
+
+   FROM node:18-alpine AS builder
+   WORKDIR /app
+   COPY . .
+   COPY --from=deps /app/node_modules ./node_modules
+   RUN npm run build
+
+   FROM node:18-alpine AS runner
+   WORKDIR /app
+   ENV NODE_ENV production
+   COPY --from=builder /app/public ./public
+   COPY --from=builder /app/.next/standalone ./
+   COPY --from=builder /app/.next/static ./.next/static
+   EXPOSE 3000
+   CMD ["node", "server.js"]
+   ```
+
+2. **Backend Docker Compose**
+   ```bash
+   cd backend
+   docker-compose up -d
+   ```
+
+### Performance Optimization Checklist
+
+- ✅ **Image Optimization**: WebP/AVIF conversion with Sharp
+- ✅ **Caching Strategy**: Multi-layer caching (static, dynamic, images)
+- ✅ **Code Splitting**: Automatic bundle optimization
+- ✅ **Compression**: Gzip/Brotli for all assets
+- ✅ **PWA Features**: Service worker with offline support
+- ✅ **SEO Optimization**: Structured data, meta tags, sitemap
+- ✅ **Security Headers**: CSP, XSS protection, CORS
+- ✅ **Monitoring**: Performance tracking and error reporting
+
+### Monitoring & Analytics
+
+1. **Google Analytics Setup**
+   ```env
+   NEXT_PUBLIC_ANALYTICS_ID=GA_MEASUREMENT_ID
+   ```
+
+2. **Performance Monitoring**
+   ```bash
+   npm run lighthouse  # Run Lighthouse audit
+   npm run analyze     # Analyze bundle size
+   ```
+
+3. **Health Checks**
+   - Frontend: `/api/health`
+   - Backend: `/health`
+   - Detailed metrics: `/api/health/detailed`
 
 ## 📚 API Documentation
 
@@ -212,13 +289,75 @@ The application supports multiple languages:
 
 Language files are located in the `data/` directory.
 
-## 📈 Performance
+## 📈 Performance & Optimization
 
-- **Lighthouse Score**: 95-100 across all metrics
-- **First Contentful Paint**: < 1.2s
-- **Largest Contentful Paint**: < 2.5s
-- **Code Splitting**: Dynamic imports for optimal loading
-- **Image Optimization**: WebP/AVIF support with lazy loading
+### Lighthouse Scores
+- **Performance**: 95-100
+- **Accessibility**: 95-100  
+- **Best Practices**: 95-100
+- **SEO**: 95-100
+
+### Core Web Vitals
+- **First Contentful Paint (FCP)**: < 1.2s
+- **Largest Contentful Paint (LCP)**: < 2.5s
+- **First Input Delay (FID)**: < 100ms
+- **Cumulative Layout Shift (CLS)**: < 0.1
+
+### Optimization Features
+
+#### Image Optimization
+- **Next.js Image Component**: Automatic WebP/AVIF conversion
+- **Sharp Processing**: Server-side image optimization with caching
+- **Lazy Loading**: Images load only when needed
+- **Responsive Images**: Multiple sizes for different viewports
+- **Image Proxy**: External image optimization with 1-hour cache TTL
+
+#### Caching Strategy
+- **Static Assets**: 1-year cache with immutable headers
+- **API Responses**: In-memory caching with configurable TTL
+- **Image Cache**: Dedicated 24-hour cache for processed images
+- **Service Worker**: Offline-first caching for PWA functionality
+
+#### Code Optimization
+- **Bundle Splitting**: Automatic code splitting by Next.js
+- **Tree Shaking**: Dead code elimination
+- **CSS Optimization**: Minification and critical CSS extraction
+- **Webpack Optimizations**: Custom chunk splitting and compression
+
+#### PWA Features
+- **Service Worker**: Advanced caching strategies for offline support
+- **Web App Manifest**: Native app-like experience
+- **Offline Fallback**: Custom offline page with retry functionality
+- **Background Sync**: Queue API requests when offline
+- **Push Notifications**: Real-time user engagement
+
+#### SEO Optimization
+- **Structured Data**: JSON-LD for products, organization, and website
+- **Meta Tags**: Dynamic Open Graph and Twitter Card generation
+- **Sitemap**: Auto-generated XML sitemap with localized pages
+- **Robots.txt**: Search engine crawler guidance
+- **Canonical URLs**: Proper URL canonicalization
+- **Hreflang**: Multi-language SEO support
+
+#### Performance Monitoring
+- **Real User Monitoring**: Core Web Vitals tracking
+- **Bundle Analysis**: Webpack bundle analyzer integration
+- **Lighthouse CI**: Automated performance testing
+- **Error Tracking**: Client-side error monitoring
+
+### Compression & Minification
+- **Gzip Compression**: Enabled for all text-based assets
+- **Brotli Support**: Modern compression for supported browsers
+- **CSS Minification**: Optimized stylesheets
+- **JavaScript Minification**: Terser optimization
+- **HTML Minification**: Reduced markup size
+
+### Security Headers
+- **Content Security Policy**: XSS protection
+- **X-Frame-Options**: Clickjacking prevention
+- **X-Content-Type-Options**: MIME type sniffing protection
+- **Referrer Policy**: Controlled referrer information
+- **Permissions Policy**: Feature access control
 
 ## 🤝 Contributing
 

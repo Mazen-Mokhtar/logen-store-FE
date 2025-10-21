@@ -43,17 +43,32 @@ export default function UserMenu() {
         className="flex items-center space-x-2 rtl:space-x-reverse p-2 hover:bg-gray-100 rounded-full transition-colors"
       >
         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-          {user.profileImage ? (
+          {user.profileImage && typeof user.profileImage === 'string' && user.profileImage.trim() !== '' ? (
             <Image
               src={user.profileImage}
               alt={user.userName}
               width={32}
               height={32}
               className="w-8 h-8 rounded-full object-cover"
+              onError={(e) => {
+                // Hide the image and show the fallback icon on error
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  const fallbackIcon = parent.querySelector('.fallback-icon');
+                  if (fallbackIcon) {
+                    (fallbackIcon as HTMLElement).style.display = 'block';
+                  }
+                }
+              }}
             />
-          ) : (
-            <User className="w-4 h-4 text-gray-600" />
-          )}
+          ) : null}
+          <User 
+            className={`w-4 h-4 text-gray-600 fallback-icon ${
+              user.profileImage && typeof user.profileImage === 'string' && user.profileImage.trim() !== '' ? 'hidden' : 'block'
+            }`} 
+          />
         </div>
         <span className="hidden md:block text-sm font-medium text-gray-700">
           {user.userName}

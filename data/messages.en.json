@@ -24,6 +24,7 @@
   "products": {
     "title": "Featured Products",
     "addToCart": "Add to Cart",
+    "addedToCart": "added to cart",
     "sale": "Sale",
     "outOfStock": "Out of Stock",
     "size": "Size",

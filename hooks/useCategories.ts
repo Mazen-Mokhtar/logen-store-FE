@@ -44,7 +44,7 @@ export function useCategories(options: UseCategoriesOptions = {}): UseCategories
         sort,
       });
 
-      setCategories(result);
+      setCategories(Array.isArray(result) ? result : []);
     } catch (err) {
       setError(handleApiError(err));
     } finally {

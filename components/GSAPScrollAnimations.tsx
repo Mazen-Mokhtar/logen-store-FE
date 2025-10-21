@@ -14,122 +14,146 @@ export default function GSAPScrollAnimations({ containerRef }: GSAPScrollAnimati
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Debounced scroll handler for better performance
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          ScrollTrigger.refresh();
-          ticking = false;
-        });
-        ticking = true;
-      }
+    // Wait for DOM to be ready and elements to be available
+    const initAnimations = () => {
+      // Kill all existing ScrollTriggers to prevent conflicts
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      
+      const ctx = gsap.context(() => {
+        // Hero text animations - check if elements exist first
+        const heroTitle = document.querySelector('.hero-title');
+        if (heroTitle) {
+          gsap.fromTo('.hero-title', 
+            { y: 100, opacity: 0 },
+            { 
+              y: 0, 
+              opacity: 1, 
+              duration: 1.2, 
+              ease: 'power3.out', 
+              delay: 0.3,
+              force3D: true,
+            }
+          );
+        }
+
+        const heroSubtitle = document.querySelector('.hero-subtitle');
+        if (heroSubtitle) {
+          gsap.fromTo('.hero-subtitle', 
+            { y: 50, opacity: 0 },
+            { 
+              y: 0, 
+              opacity: 1, 
+              duration: 1, 
+              ease: 'power3.out', 
+              delay: 0.6,
+              force3D: true,
+            }
+          );
+        }
+
+        const heroCta = document.querySelector('.hero-cta');
+        if (heroCta) {
+          gsap.fromTo('.hero-cta', 
+            { y: 30, opacity: 0 },
+            { 
+              y: 0, 
+              opacity: 1, 
+              duration: 0.8, 
+              ease: 'power3.out', 
+              delay: 0.9,
+              force3D: true,
+            }
+          );
+        }
+
+        // Category cards stagger animation - check if elements exist first
+        const categoryCards = document.querySelectorAll('.category-card');
+        if (categoryCards.length > 0) {
+          gsap.fromTo('.category-card', 
+            { y: 60, opacity: 0, scale: 0.9 },
+            {
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.8,
+              ease: 'power3.out',
+              stagger: 0.1,
+              force3D: true,
+              scrollTrigger: {
+                trigger: '.category-section',
+                start: 'top 80%',
+                end: 'bottom 20%',
+                toggleActions: 'play none none reverse',
+                fastScrollEnd: true,
+                refreshPriority: -1,
+                invalidateOnRefresh: true,
+              }
+            }
+          );
+        }
+
+        // Product cards stagger animation - check if elements exist first
+        const productCards = document.querySelectorAll('.product-card');
+        if (productCards.length > 0) {
+          gsap.fromTo('.product-card', 
+            { y: 80, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: 'power3.out',
+              stagger: 0.15,
+              force3D: true,
+              scrollTrigger: {
+                trigger: '.products-section',
+                start: 'top 80%',
+                end: 'bottom 20%',
+                toggleActions: 'play none none reverse',
+                fastScrollEnd: true,
+                refreshPriority: -1,
+                invalidateOnRefresh: true,
+              }
+            }
+          );
+        }
+
+        // Section titles animation - check if elements exist first
+        const sectionTitles = document.querySelectorAll('.section-title');
+        if (sectionTitles.length > 0) {
+          gsap.fromTo('.section-title', 
+            { y: 50, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: 'power3.out',
+              force3D: true,
+              scrollTrigger: {
+                trigger: '.section-title',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse',
+                fastScrollEnd: true,
+                refreshPriority: -1,
+                invalidateOnRefresh: true,
+              }
+            }
+          );
+        }
+
+      }, containerRef);
+
+      return ctx;
     };
 
-    const ctx = gsap.context(() => {
-      // Hero text animations
-      gsap.fromTo('.hero-title', 
-        { y: 100, opacity: 0 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          duration: 1.2, 
-          ease: 'power3.out', 
-          delay: 0.3,
-          force3D: true,
-        }
-      );
-
-      gsap.fromTo('.hero-subtitle', 
-        { y: 50, opacity: 0 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          duration: 1, 
-          ease: 'power3.out', 
-          delay: 0.6,
-          force3D: true,
-        }
-      );
-
-      gsap.fromTo('.hero-cta', 
-        { y: 30, opacity: 0 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          duration: 0.8, 
-          ease: 'power3.out', 
-          delay: 0.9,
-          force3D: true,
-        }
-      );
-
-      // Category cards stagger animation
-      gsap.fromTo('.category-card', 
-        { y: 60, opacity: 0, scale: 0.9 },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          stagger: 0.1,
-          force3D: true,
-          scrollTrigger: {
-            trigger: '.category-section',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-            fastScrollEnd: true,
-          }
-        }
-      );
-
-      // Product cards stagger animation
-      gsap.fromTo('.product-card', 
-        { y: 80, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          stagger: 0.15,
-          force3D: true,
-          scrollTrigger: {
-            trigger: '.products-section',
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse',
-            fastScrollEnd: true,
-          }
-        }
-      );
-
-      // Section titles animation
-      gsap.fromTo('.section-title', 
-        { y: 50, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          force3D: true,
-          scrollTrigger: {
-            trigger: '.section-title',
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-            fastScrollEnd: true,
-          }
-        }
-      );
-
-    }, containerRef);
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Use a timeout to ensure DOM elements are rendered
+    const timeoutId = setTimeout(() => {
+      initAnimations();
+    }, 100);
 
     return () => {
-      ctx.revert();
-      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+      // Clean up all ScrollTriggers when component unmounts
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
   }, [containerRef]);
 

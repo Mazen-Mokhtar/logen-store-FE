@@ -1,7 +1,7 @@
 import { CartItem } from './store';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
 
 // Types
@@ -32,10 +32,8 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  accessToken: string;
+  refreshToken: string;
   expiresAt: string;
 }
 
@@ -116,6 +114,7 @@ export interface Order {
 
 export interface CheckoutRequest {
   items: CartItem[];
+  productName: string;  // Make this required
   guestInfo?: {
     firstName: string;
     lastName: string;
@@ -125,7 +124,7 @@ export interface CheckoutRequest {
     city: string;
     postalCode?: string;
   };
-  paymentMethod: 'cod' | 'stripe';
+  paymentMethod: 'cash' | 'card';  // Changed from 'cod' | 'stripe' to 'cash' | 'card'
   currency: 'EGP' | 'USD';
   idempotencyKey: string;
   couponCode?: string;
@@ -168,7 +167,8 @@ class ApiClient {
     if (includeAuth) {
       const token = this.getAuthToken();
       if (token) {
-        headers.Authorization = `Bearer ${token}`;
+        // Use the full token as it already contains the "user " prefix
+        headers.Authorization = token;
       }
     }
 
@@ -465,6 +465,7 @@ class ApiClient {
 
   // Checkout APIs
   async processCheckout(checkoutData: CheckoutRequest): Promise<CheckoutResponse> {
+    console.log('API Client - processCheckout data:', checkoutData);
     const response = await fetch(`${this.baseURL}/checkout`, {
       method: 'POST',
       headers: this.getHeaders(false),
@@ -475,6 +476,7 @@ class ApiClient {
   }
 
   async processAuthenticatedCheckout(checkoutData: Omit<CheckoutRequest, 'guestInfo'>): Promise<CheckoutResponse> {
+    console.log('API Client - processAuthenticatedCheckout data:', checkoutData);
     const response = await fetch(`${this.baseURL}/checkout/authenticated`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -497,6 +499,24 @@ class ApiClient {
     });
 
     const data = await this.handleResponse<ApiResponse<any>>(response);
+    return data.data!;
+  }
+
+  async trackOrder(params: {
+    orderId: string;
+    email?: string;
+    phone?: string;
+  }): Promise<Order> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('orderId', params.orderId);
+    if (params.email) queryParams.append('email', params.email);
+    if (params.phone) queryParams.append('phone', params.phone);
+
+    const response = await fetch(`${this.baseURL}/order/track?${queryParams.toString()}`, {
+      headers: this.getHeaders(false),
+    });
+
+    const data = await this.handleResponse<ApiResponse<Order>>(response);
     return data.data!;
   }
 
@@ -560,7 +580,12 @@ export const apiClient = new ApiClient();
 
 // Helper functions
 export function generateIdempotencyKey(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate a proper UUID v4
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 export function handleApiError(error: any): string {

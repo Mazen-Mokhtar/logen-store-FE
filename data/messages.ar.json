@@ -24,6 +24,7 @@
   "products": {
     "title": "المنتجات المميزة",
     "addToCart": "أضف للسلة",
+    "addedToCart": "تم إضافته للسلة",
     "sale": "تخفيض",
     "outOfStock": "نفد المخزون",
     "size": "المقاس",

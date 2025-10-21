@@ -1,0 +1,97 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Try Again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "clear": "Clear",
+    "apply": "Apply",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "navigation": {
+    "home": "Home",
+    "products": "Products",
+    "collections": "Collections",
+    "about": "About",
+    "contact": "Contact",
+    "cart": "Cart",
+    "account": "Account",
+    "orders": "Orders",
+    "wishlist": "Wishlist"
+  },
+  "seo": {
+    "defaultTitle": "StyleHub - Premium Fashion Store",
+    "defaultDescription": "Discover premium fashion for the modern lifestyle. Shop our curated collection of contemporary clothing, shoes, and accessories.",
+    "keywords": "fashion, clothing, style, premium, modern, contemporary"
+  },
+  "health": {
+    "title": "System Health",
+    "status": "Status",
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "degraded": "Degraded",
+    "unknown": "Unknown",
+    "uptime": "Uptime",
+    "lastCheck": "Last Check",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "autoRefresh": "Auto Refresh",
+    "database": "Database",
+    "cache": "Cache",
+    "api": "API",
+    "memory": "Memory Usage",
+    "cpu": "CPU Usage",
+    "disk": "Disk Usage",
+    "requests": "Requests/min",
+    "errors": "Error Rate",
+    "responseTime": "Response Time"
+  },
+  "language": {
+    "switchLanguage": "Switch Language",
+    "english": "English",
+    "arabic": "Arabic"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "notFound": "The requested resource was not found.",
+    "unauthorized": "You are not authorized to access this resource.",
+    "forbidden": "Access to this resource is forbidden.",
+    "serverError": "Internal server error. Please try again later."
+  },
+  "products": {
+    "title": "Products",
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "price": "Price",
+    "description": "Description",
+    "specifications": "Specifications",
+    "reviews": "Reviews",
+    "relatedProducts": "Related Products"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "removeItem": "Remove Item",
+    "updateQuantity": "Update Quantity"
+  }
+}

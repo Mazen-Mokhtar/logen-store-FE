@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Disallow user-specific pages
+Disallow: /orders/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /track-order/
+Disallow: /order-success/
+
+# Disallow API routes
+Disallow: /api/
+
+# Disallow admin areas
+Disallow: /admin/
+
+# Allow important pages
+Allow: /
+Allow: /collections/
+Allow: /products/
+Allow: /health/
+Allow: /seo-demo/
+
+# Sitemap location
+Sitemap: https://stylehub.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1

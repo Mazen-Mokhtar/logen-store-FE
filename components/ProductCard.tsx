@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
-import { useCartStore, useLanguageStore } from '@/lib/store';
+import { useCartStore, useLanguageStore, useNotificationStore } from '@/lib/store';
 import { useMessages } from '@/hooks/useMessages';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, decodeHtmlEntities } from '@/lib/utils';
 import { Product as ApiProduct } from '@/lib/api';
 
 
@@ -25,6 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   });
   const { addItem } = useCartStore();
   const { language } = useLanguageStore();
+  const { addNotification } = useNotificationStore();
   const messages = useMessages();
 
   const title = language === 'ar' ? product.title.ar : product.title.en;
@@ -43,6 +44,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       title,
       price: product.price,
       image: product.images[0]?.secure_url || '/placeholder-image.jpg',
+    });
+
+    // Show success notification
+    addNotification({
+      type: 'success',
+      title: messages.products.addToCart,
+      message: `${title} ${messages.products.addedToCart || 'added to cart'}`,
     });
   };
 
@@ -79,7 +87,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           >
             {inView && (
               <Image
-                src={product.images[0]?.secure_url || '/placeholder-image.jpg'}
+                src={decodeHtmlEntities(product.images[0]?.secure_url || '/placeholder-image.jpg')}
                 alt={title}
                 fill
                 className={`object-cover transition-opacity duration-300 ${

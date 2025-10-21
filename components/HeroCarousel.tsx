@@ -147,7 +147,7 @@ export default function HeroCarousel() {
 
       {/* Dots Indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-3">
-        {slides.map((_, index) => (
+        {Array.isArray(slides) && slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}

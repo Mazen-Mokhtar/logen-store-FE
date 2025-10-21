@@ -56,9 +56,9 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersReturn {
       });
 
       if (reset) {
-        setOrders(result.orders);
+        setOrders(Array.isArray(result.orders) ? result.orders : []);
       } else {
-        setOrders(prev => [...prev, ...result.orders]);
+        setOrders(prev => [...prev, ...(Array.isArray(result.orders) ? result.orders : [])]);
       }
       
       setPagination(result.pagination);
@@ -82,7 +82,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersReturn {
         sortOrder,
       });
 
-      setOrders(prev => [...prev, ...result.orders]);
+      setOrders(prev => [...prev, ...(Array.isArray(result.orders) ? result.orders : [])]);
       setPagination(result.pagination);
     } catch (err) {
       setError(handleApiError(err));

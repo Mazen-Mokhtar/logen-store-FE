@@ -2,9 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { useLanguageStore } from '@/lib/store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import QueryProvider from './QueryProvider';
 
 // Lazy load heavy components
 const CartDrawer = dynamic(() => import('./CartDrawer'), {
@@ -23,10 +24,16 @@ const NotificationToast = dynamic(() => import('./NotificationToast'), {
 });
 interface LayoutProps {
   children: React.ReactNode;
+  locale?: string;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, locale }: LayoutProps) {
   const { language } = useLanguageStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -41,14 +48,18 @@ export default function Layout({ children }: LayoutProps) {
   }, [language]);
 
   return (
-    <div className={`min-h-screen ${language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
+    <QueryProvider>
       <ScrollAnimations>
         <Header />
-        <main>{children}</main>
+        <main className={`min-h-screen ${mounted && language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
+          {children}
+        </main>
         <Footer />
       </ScrollAnimations>
       <CartDrawer />
       <NotificationToast />
-    </div>
+    </QueryProvider>
   );
 }
+
+export { Layout };
