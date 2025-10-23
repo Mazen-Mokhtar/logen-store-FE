@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import ProductDetailClient from './ProductDetailClient';
+import ProductDetailSkeleton from '@/components/LoadingStates/ProductDetailSkeleton';
 import { config } from '@/lib/config';
 
 interface PageProps {
@@ -11,14 +12,18 @@ interface PageProps {
   };
 }
 
-// Enable ISR with revalidation every 30 seconds for product pages
-export const revalidate = 30;
+// Enable ISR with revalidation every 60 seconds for product pages (optimized for performance)
+export const revalidate = 60;
 
-// Generate static params for all products
+// Generate static params for popular products first
 export async function generateStaticParams() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
-    const response = await fetch(`${baseUrl}/products?limit=1000`);
+    
+    // Fetch popular/featured products first for better performance
+    const response = await fetch(`${baseUrl}/products?limit=50&sort=popular`, {
+      next: { revalidate: 3600 } // Cache for 1 hour during build
+    });
     
     if (!response.ok) {
       return [];
@@ -27,14 +32,16 @@ export async function generateStaticParams() {
     const data = await response.json();
     const products = data.data || [];
     
-    // Generate params for all locale/handle combinations
+    // Generate params for all locale/handle combinations for popular products
     const params = [];
     for (const locale of config.i18n.locales) {
       for (const product of products) {
-        params.push({
-          locale,
-          handle: product.handle,
-        });
+        if (product.handle) {
+          params.push({
+            locale,
+            handle: product.handle,
+          });
+        }
       }
     }
     
@@ -134,18 +141,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// Fetch product data at build time for ISR
+// Fetch product data at build time for ISR with optimized caching
 async function getProductData(handle: string) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
     
-    // Fetch product and related products in parallel
+    // Fetch product and related products in parallel with optimized caching
     const [productRes, relatedRes] = await Promise.all([
       fetch(`${baseUrl}/products/handle/${handle}`, {
-        next: { revalidate: 30 }
+        next: { 
+          revalidate: 60, // Cache product data for 1 minute
+          tags: [`product-${handle}`] // Enable tag-based revalidation
+        }
       }),
-      fetch(`${baseUrl}/products?limit=8`, {
-        next: { revalidate: 60 }
+      fetch(`${baseUrl}/products?limit=8&sort=popular`, {
+        next: { 
+          revalidate: 300, // Cache related products for 5 minutes
+          tags: ['related-products']
+        }
       })
     ]);
 
@@ -156,11 +169,12 @@ async function getProductData(handle: string) {
       return null;
     }
 
-    // Filter related products (same category, different product)
+    // Filter related products (same category, different product) with better logic
     const relatedProducts = (relatedData.data || [])
       .filter((p: any) => 
         p.category?._id === productData.data.category?._id && 
-        p._id !== productData.data._id
+        p._id !== productData.data._id &&
+        p.inStock // Only show in-stock related products
       )
       .slice(0, 4);
 
@@ -189,40 +203,7 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   return (
-    <Suspense fallback={
-      <div className="pt-20 min-h-screen">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            {/* Back button skeleton */}
-            <div className="h-6 bg-gray-200 rounded w-32 mb-8"></div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-              {/* Image gallery skeleton */}
-              <div className="space-y-4">
-                <div className="aspect-square bg-gray-200 rounded-2xl"></div>
-                <div className="flex space-x-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="w-20 h-20 bg-gray-200 rounded-lg"></div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Product info skeleton */}
-              <div className="space-y-6">
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  <div className="h-4 bg-gray-200 rounded w-4/6"></div>
-                </div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<ProductDetailSkeleton />}>
       <ProductDetailClient 
         locale={locale}
         product={data.product}

@@ -110,13 +110,13 @@ export default function HeroCarousel() {
                 className="hero-title text-4xl md:text-6xl lg:text-7xl font-bold mb-6"
                 style={{ willChange: 'transform' }}
               >
-                {messages.hero[slides[currentSlide].titleKey as keyof typeof messages.hero]}
+                {messages?.hero?.[slides[currentSlide].titleKey as keyof typeof messages.hero] || 'Discover Your Style'}
               </h1>
               <p
                 className="hero-subtitle text-lg md:text-xl lg:text-2xl mb-8 opacity-90"
                 style={{ willChange: 'transform' }}
               >
-                {messages.hero[slides[currentSlide].subtitleKey as keyof typeof messages.hero]}
+                {messages?.hero?.[slides[currentSlide].subtitleKey as keyof typeof messages.hero] || 'Premium fashion for the modern lifestyle'}
               </p>
               <motion.button
                 className="hero-cta bg-white text-black px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors"
@@ -124,7 +124,7 @@ export default function HeroCarousel() {
                 whileTap={{ scale: 0.95 }}
                 style={{ willChange: 'transform' }}
               >
-                {messages.hero.cta}
+                {messages?.hero?.cta || 'Shop Now'}
               </motion.button>
             </div>
           </div>

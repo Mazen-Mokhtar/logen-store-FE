@@ -14,13 +14,51 @@ import { useMessages } from '@/hooks/useMessages';
 import { formatPrice, decodeHtmlEntities } from '@/lib/utils';
 import { useNotificationStore } from '@/lib/store';
 
-// Lazy load related products section
+// Lazy load components with better loading states
 const ProductCard = dynamic(() => import('@/components/ProductCard'), {
+  loading: () => {
+    const ProductCardSkeleton = require('@/components/LoadingStates/ProductCardSkeleton').default;
+    return <ProductCardSkeleton />;
+  },
+});
+
+const ProductRating = dynamic(() => import('@/components/ClientOnlyRating'), {
+  ssr: false,
+  loading: () => (
+    <div className="animate-pulse">
+      <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
+      <div className="h-4 bg-gray-200 rounded w-24"></div>
+    </div>
+  ),
+});
+
+const RatingForm = dynamic(() => import('@/components/RatingForm'), {
+  loading: () => (
+    <div className="animate-pulse bg-white border rounded-lg p-6">
+      <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+      <div className="h-8 bg-gray-200 rounded mb-4"></div>
+      <div className="h-20 bg-gray-200 rounded mb-4"></div>
+      <div className="h-10 bg-gray-200 rounded w-32"></div>
+    </div>
+  ),
+});
+
+const RatingsList = dynamic(() => import('@/components/ClientOnlyRatingsList'), {
+  ssr: false,
   loading: () => (
     <div className="animate-pulse space-y-4">
-      <div className="aspect-square bg-gray-200 rounded-2xl"></div>
-      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="bg-white border rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-16 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   ),
 });
@@ -54,6 +92,8 @@ export default function ProductDetailClient({
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showRatingForm, setShowRatingForm] = useState<boolean>(false);
+  const [editingRating, setEditingRating] = useState<any>(null);
   
   const router = useRouter();
   const { addItem } = useCartStore();
@@ -142,6 +182,21 @@ export default function ProductDetailClient({
         message: isRTL ? 'تم نسخ الرابط' : 'Link copied to clipboard',
       });
     }
+  };
+
+  const handleRatingFormSuccess = () => {
+    setShowRatingForm(false);
+    setEditingRating(null);
+    addNotification({
+      type: 'success',
+      title: isRTL ? 'نجح' : 'Success',
+      message: isRTL ? 'تم حفظ التقييم بنجاح' : 'Rating saved successfully',
+    });
+  };
+
+  const handleEditRating = (rating: any) => {
+    setEditingRating(rating);
+    setShowRatingForm(true);
   };
 
   return (
@@ -257,6 +312,38 @@ export default function ProductDetailClient({
               <p className="text-gray-600 leading-relaxed">
                 {decodeHtmlEntities(description)}
               </p>
+            </div>
+
+            {/* Product Rating */}
+            <div className="border-t border-b border-gray-200 py-6">
+              <Suspense fallback={
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                </div>
+              }>
+                <ProductRating 
+                  productId={product._id} 
+                  showDetails={true}
+                  size="lg"
+                  className="mb-4"
+                  interactive={true}
+                  onClick={() => {
+                    // Scroll to ratings section
+                    const ratingsSection = document.getElementById('ratings');
+                    if (ratingsSection) {
+                      ratingsSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                />
+              </Suspense>
+              
+              <button
+                onClick={() => setShowRatingForm(!showRatingForm)}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                {isRTL ? 'إضافة تقييم' : 'Write a Review'}
+              </button>
             </div>
 
             {/* Stock Status */}
@@ -375,7 +462,7 @@ export default function ProductDetailClient({
               </div>
             </div>
 
-            {/* Product Tags */}
+            {/* Tags */}
             {Array.isArray(product.tags) && product.tags.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">
@@ -395,6 +482,68 @@ export default function ProductDetailClient({
             )}
           </motion.div>
         </div>
+
+        {/* Rating Form */}
+        {showRatingForm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="mb-16"
+          >
+            <Suspense fallback={
+              <div className="animate-pulse bg-white border rounded-lg p-6">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded mb-4"></div>
+                <div className="h-20 bg-gray-200 rounded mb-4"></div>
+                <div className="h-10 bg-gray-200 rounded w-32"></div>
+              </div>
+            }>
+              <RatingForm
+                productId={product._id}
+                existingRating={editingRating}
+                onSuccess={handleRatingFormSuccess}
+                onCancel={() => {
+                  setShowRatingForm(false);
+                  setEditingRating(null);
+                }}
+              />
+            </Suspense>
+          </motion.div>
+        )}
+
+        {/* Ratings List */}
+        <motion.section
+          id="ratings"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mb-16"
+        >
+          <Suspense fallback={
+            <div className="animate-pulse space-y-4">
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className="bg-white border rounded-lg p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-16 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          }>
+            <RatingsList
+              productId={product._id}
+              currentUserId={undefined} // TODO: Get from auth context
+              onEditRating={handleEditRating}
+            />
+          </Suspense>
+        </motion.section>
 
         {/* Related Products */}
         {Array.isArray(relatedProducts) && relatedProducts.length > 0 && (

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
@@ -10,6 +11,19 @@ import { useCartStore, useLanguageStore, useNotificationStore } from '@/lib/stor
 import { useMessages } from '@/hooks/useMessages';
 import { formatPrice, decodeHtmlEntities } from '@/lib/utils';
 import { Product as ApiProduct } from '@/lib/api';
+import { useProductPrefetch } from '@/hooks/useProductPrefetch';
+import dynamic from 'next/dynamic';
+
+// Lazy load ProductRating component with no SSR
+const ProductRating = dynamic(() => import('./ClientOnlyRating'), {
+  ssr: false,
+  loading: () => (
+    <div className="animate-pulse flex items-center space-x-1">
+      <div className="h-3 w-3 bg-gray-200 rounded"></div>
+      <div className="h-3 w-8 bg-gray-200 rounded"></div>
+    </div>
+  ),
+});
 
 
 interface ProductCardProps {
@@ -19,6 +33,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const router = useRouter();
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -28,10 +43,23 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addNotification } = useNotificationStore();
   const messages = useMessages();
 
+  // Prefetch product data when card enters viewport
+  const { ref: prefetchRef } = useProductPrefetch({
+    productHandle: product.handle,
+    threshold: 0.2,
+    rootMargin: '100px',
+  });
+
   const title = language === 'ar' ? product.title.ar : product.title.en;
   const isOnSale = product.promotion?.isOnSale || false;
   const salePrice = product.promotion?.salePrice;
   const originalPrice = product.promotion?.originalPrice;
+  const productUrl = `/${language}/products/${encodeURIComponent(product.handle)}`;
+
+  const handleProductClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(productUrl);
+  }, [router, productUrl]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,13 +84,20 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <motion.div
-      ref={ref}
+      ref={(el) => {
+        ref(el);
+        prefetchRef(el);
+      }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className="group"
       style={{ willChange: 'transform' }}
     >
-      <Link href={`/products/${encodeURIComponent(product.handle)}`}>
+      <Link 
+        href={productUrl}
+        prefetch={true}
+        onClick={handleProductClick}
+      >
         <div className="relative overflow-hidden rounded-2xl bg-gray-100 aspect-square">
           {/* Sale Badge */}
           {isOnSale && (
@@ -123,6 +158,30 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Product Info */}
         <div className="mt-4 space-y-2">
           <h3 className="font-semibold text-gray-900 line-clamp-2">{title}</h3>
+          
+          {/* Product Rating */}
+          <Suspense fallback={
+            <div className="animate-pulse flex items-center space-x-1 rtl:space-x-reverse">
+              <div className="h-3 w-3 bg-gray-200 rounded"></div>
+              <div className="h-3 w-8 bg-gray-200 rounded"></div>
+            </div>
+          }>
+            <div className="mb-1">
+              <ProductRating
+                productId={product._id}
+                showDetails={false}
+                size="sm"
+                interactive={true}
+                onClick={(e?: React.MouseEvent) => {
+                  e?.preventDefault();
+                  e?.stopPropagation();
+                  // Navigate to product page ratings section
+                  window.location.href = `/products/${encodeURIComponent(product.handle)}#ratings`;
+                }}
+              />
+            </div>
+          </Suspense>
+          
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <span className="text-lg font-bold text-gray-900">
               {formatPrice(product.price)}

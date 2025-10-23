@@ -14,7 +14,8 @@
     "inStock": true,
     "sale": true,
     "sizes": ["S", "M", "L", "XL"],
-    "colors": ["Black", "White", "Gray"]
+    "colors": ["Black", "White", "Gray"],
+    "rating": 4.5
   },
   {
     "id": "p2",
@@ -31,7 +32,8 @@
     "inStock": true,
     "sale": false,
     "sizes": ["S", "M", "L", "XL"],
-    "colors": ["Gray", "Black", "Navy"]
+    "colors": ["Gray", "Black", "Navy"],
+    "rating": 4.2
   },
   {
     "id": "p3",
@@ -48,7 +50,8 @@
     "inStock": true,
     "sale": true,
     "sizes": ["S", "M", "L", "XL"],
-    "colors": ["Black", "Gray", "Navy"]
+    "colors": ["Black", "Gray", "Navy"],
+    "rating": 4.7
   },
   {
     "id": "p4",
@@ -65,7 +68,8 @@
     "inStock": true,
     "sale": false,
     "sizes": ["S", "M", "L", "XL"],
-    "colors": ["White", "Black", "Navy"]
+    "colors": ["White", "Black", "Navy"],
+    "rating": 4.4
   },
   {
     "id": "p5",
@@ -82,7 +86,8 @@
     "inStock": true,
     "sale": true,
     "sizes": ["S", "M", "L", "XL"],
-    "colors": ["Blue", "Black", "Light Blue"]
+    "colors": ["Blue", "Black", "Light Blue"],
+    "rating": 4.2
   },
   {
     "id": "p6",
@@ -99,6 +104,8 @@
     "inStock": true,
     "sale": false,
     "sizes": ["40", "41", "42", "43", "44"],
-    "colors": ["White", "Black", "Gray"]
+    "colors": ["White", "Black", "Gray"],
+    "rating": 4.8,
+    "featured": false
   }
 ]
