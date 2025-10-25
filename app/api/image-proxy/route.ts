@@ -20,7 +20,7 @@ function cleanupCache() {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const imageUrl = searchParams.get('url');
     const width = searchParams.get('w') ? parseInt(searchParams.get('w')!) : undefined;
     const height = searchParams.get('h') ? parseInt(searchParams.get('h')!) : undefined;

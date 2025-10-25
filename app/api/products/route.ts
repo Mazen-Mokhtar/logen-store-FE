@@ -6,7 +6,7 @@ const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:3000/ap
 export async function GET(request: NextRequest) {
   try {
     // Get the search parameters from the request
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     
     // Build the backend URL with the same query parameters
     const backendUrl = `${BACKEND_API_URL}/products?${searchParams.toString()}`;

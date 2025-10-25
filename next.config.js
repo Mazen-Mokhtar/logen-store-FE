@@ -39,8 +39,8 @@ const nextConfig = {
   trailingSlash: false,
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    // Fix for service worker 'self' reference in server build
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Ensure Node core modules aren't polyfilled on the server
     if (isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -51,10 +51,11 @@ const nextConfig = {
     }
 
     // Production optimizations
-    if (!dev) {
+    // Important: only apply client-side chunk splitting to avoid creating
+    // server vendor chunks that may evaluate browser-only code (e.g., referencing 'self').
+    if (!dev && !isServer) {
       // Enable tree shaking
       config.optimization.usedExports = true;
-      config.optimization.sideEffects = false;
       
       // Minimize CSS
       config.optimization.minimizer = config.optimization.minimizer || [];

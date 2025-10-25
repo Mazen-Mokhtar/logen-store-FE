@@ -320,7 +320,7 @@ export function initPerformanceOptimizations() {
   registerServiceWorker();
 }
 
-export default {
+const performanceSEO = {
   createSEOOptimizedImage,
   preloadCriticalResources,
   initPerformanceMonitoring,
@@ -330,3 +330,5 @@ export default {
   registerServiceWorker,
   initPerformanceOptimizations
 };
+
+export default performanceSEO;

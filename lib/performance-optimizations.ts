@@ -115,7 +115,7 @@ export const bundleAnalysisConfig = {
   },
 };
 
-export default {
+const performanceOptimizations = {
   routerPrefetchConfig,
   imageOptimizationConfig,
   cacheConfig,
@@ -123,3 +123,5 @@ export default {
   optimizationTips,
   bundleAnalysisConfig,
 };
+
+export default performanceOptimizations;

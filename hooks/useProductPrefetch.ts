@@ -31,7 +31,7 @@ export function useProductPrefetch({
       // Prefetch product data
       await queryClient.prefetchQuery({
         queryKey: ['product', productHandle],
-        queryFn: () => apiClient.getProduct(productHandle),
+        queryFn: () => apiClient.getProductByHandle(productHandle),
         staleTime: 5 * 60 * 1000, // 5 minutes
       });
 
