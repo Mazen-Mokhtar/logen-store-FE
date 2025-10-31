@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import ProductCard from './ProductCard';
+import OptimizedProductCard from './OptimizedProductCard';
 import { useMessages } from '@/hooks/useMessages';
 import { useProducts } from '@/hooks/useProducts';
 
@@ -16,17 +16,11 @@ export default function ProductGrid() {
   return (
     <section className="products-section py-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="section-title text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             {messages.products.title}
           </h2>
-        </motion.div>
+        </div>
 
         {loading && products.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
@@ -46,10 +40,13 @@ export default function ProductGrid() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
-              {products && products.length > 0 ? products.map((product) => (
-                <div key={product._id} className="product-card">
-                  <ProductCard product={product} />
-                </div>
+              {products && products.length > 0 ? products.map((product, index) => (
+                <OptimizedProductCard 
+                  key={product._id} 
+                  product={product} 
+                  priority={index < 4}
+                  className="product-card"
+                />
               )) : (
                 <div className="col-span-full text-center py-16">
                   <p className="text-xl text-gray-500">No products found</p>

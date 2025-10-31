@@ -30,7 +30,10 @@
     "cart": "Cart",
     "account": "Account",
     "orders": "Orders",
-    "wishlist": "Wishlist"
+    "wishlist": "Wishlist",
+    "aboutUs": "About Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
   },
   "seo": {
     "defaultTitle": "StyleHub - Premium Fashion Store",
@@ -93,5 +96,57 @@
     "continueShopping": "Continue Shopping",
     "removeItem": "Remove Item",
     "updateQuantity": "Update Quantity"
+  },
+  "pages": {
+    "aboutUs": {
+      "title": "About Us",
+      "subtitle": "Learn more about our company and mission",
+      "ourStory": "Our Story",
+      "ourMission": "Our Mission",
+      "ourVision": "Our Vision",
+      "ourValues": "Our Values",
+      "foundedIn": "Founded in",
+      "companyName": "Company Name",
+      "registrationNumber": "Registration Number"
+    },
+    "privacyPolicy": {
+      "title": "Privacy Policy",
+      "subtitle": "How we collect, use, and protect your information",
+      "effectiveDate": "Effective Date",
+      "lastUpdated": "Last Updated",
+      "dataCollection": "Data Collection",
+      "dataUsage": "How We Use Your Data",
+      "dataProtection": "Data Protection",
+      "cookies": "Cookies",
+      "thirdParty": "Third-Party Services",
+      "userRights": "Your Rights",
+      "contact": "Contact Us"
+    },
+    "termsOfService": {
+      "title": "Terms of Service",
+      "subtitle": "Terms and conditions for using our services",
+      "effectiveDate": "Effective Date",
+      "lastUpdated": "Last Updated",
+      "acceptance": "Acceptance of Terms",
+      "services": "Our Services",
+      "userResponsibilities": "User Responsibilities",
+      "prohibited": "Prohibited Activities",
+      "intellectual": "Intellectual Property",
+      "limitation": "Limitation of Liability",
+      "termination": "Termination",
+      "governing": "Governing Law",
+      "contact": "Contact Information"
+    }
+  },
+  "footer": {
+    "about": "About Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© 2024 Logen Store. All rights reserved."
+  },
+  "nav": {
+    "home": "Home",
+    "collections": "Collections",
+    "contact": "Contact"
   }
 }

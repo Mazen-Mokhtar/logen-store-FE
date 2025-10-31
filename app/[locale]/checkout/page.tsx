@@ -1,17 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CreditCard, Truck, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useCartStore } from '@/lib/store';
 import { useMessages } from '@/hooks/useMessages';
 import { formatPrice } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { apiClient, generateIdempotencyKey, handleApiError } from '@/lib/api';
 import { useCoupons } from '@/hooks/useCoupons';
+
+// Lazy load notification prompt
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface CheckoutPageProps {
   params: {
@@ -21,7 +28,7 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ params }: CheckoutPageProps) {
   const { locale } = params;
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, getTotalPrice, getCartCurrency, clearCart } = useCartStore();
   const { isAuthenticated, user } = useAuth();
   const messages = useMessages();
   const { validateCoupon, validatingCoupon } = useCoupons();
@@ -33,6 +40,7 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: user?.userName?.split(' ')[0] || '',
@@ -47,6 +55,7 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
 
   const subtotal = getTotalPrice();
+  const cartCurrency = getCartCurrency();
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const shipping = 50; // Fixed shipping cost
   const tax = Math.round((subtotal - couponDiscount) * 0.15); // 15% tax on discounted amount
@@ -175,15 +184,21 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
 
       if (result.success) {
         clearCart();
+        setSuccess('Order placed successfully!');
         
-        // Redirect immediately without delay
-        if (result.clientSecret) {
-          // Handle Stripe payment
-          router.push(`/${locale}/payment?order=${result.orderId}&client_secret=${result.clientSecret}`);
-        } else {
-          // COD order - redirect to success page immediately
-          router.push(`/${locale}/order-success?order=${result.orderId}`);
-        }
+        // Show notification prompt for order completion
+        setShowNotificationPrompt(true);
+        
+        // Redirect after showing success
+        setTimeout(() => {
+          if (result.clientSecret) {
+            // Handle Stripe payment
+            router.push(`/${locale}/payment?order=${result.orderId}&client_secret=${result.clientSecret}`);
+          } else {
+            // COD order - redirect to success page immediately
+            router.push(`/${locale}/order-success?order=${result.orderId}`);
+          }
+        }, 2000);
       } else {
         setError(result.message || 'Failed to place order. Please try again.');
       }
@@ -483,7 +498,7 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
                         Coupon "{appliedCoupon.coupon.code}" applied
                       </p>
                       <p className="text-sm text-green-600">
-                        You saved {formatPrice(couponDiscount)}
+                        You saved {formatPrice(couponDiscount, cartCurrency)}
                       </p>
                     </div>
                     <button
@@ -554,7 +569,7 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-gray-900">
-                      {formatPrice(item.price * item.quantity)}
+                      {formatPrice(item.price * item.quantity, item.currency)}
                     </p>
                   </div>
                 </div>
@@ -565,25 +580,25 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
             <div className="border-t pt-6 space-y-3">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span>{formatPrice(subtotal, cartCurrency)}</span>
               </div>
               {appliedCoupon && (
                 <div className="flex justify-between text-green-600">
                   <span>Coupon Discount ({appliedCoupon.coupon.code})</span>
-                  <span>-{formatPrice(couponDiscount)}</span>
+                  <span>-{formatPrice(couponDiscount, cartCurrency)}</span>
                 </div>
               )}
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
-                <span>{formatPrice(shipping)}</span>
+                <span>{formatPrice(shipping, cartCurrency)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Tax</span>
-                <span>{formatPrice(tax)}</span>
+                <span>{formatPrice(tax, cartCurrency)}</span>
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900">
                 <span>Total</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(total, cartCurrency)}</span>
               </div>
             </div>
 
@@ -602,6 +617,13 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
             </p>
           </motion.div>
         </div>
+
+        {/* Notification Prompt */}
+        <NotificationPrompt
+          trigger="checkout"
+          isVisible={showNotificationPrompt}
+          onClose={() => setShowNotificationPrompt(false)}
+        />
       </div>
     </div>
   );

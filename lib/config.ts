@@ -4,7 +4,7 @@ import { LocaleConfig, CurrencyConfig } from '@/types';
 export const config = {
   api: {
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api',
-    version: process.env.NEXT_PUBLIC_API_VERSION || 'v1',
+    version: process.env.NEXT_PUBLIC_API_VERSION || '',
     endpoints: {
       products: '/products',
       categories: '/category/AllCategory',

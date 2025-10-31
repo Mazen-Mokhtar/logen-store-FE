@@ -59,7 +59,7 @@ export interface RatingFilters {
 }
 
 // API functions
-const API_BASE = '/api/ratings';
+const API_BASE = '/api/v1/ratings';
 
 async function fetchProductRatings(productId: string, filters: RatingFilters = {}) {
   // Only try to get auth token on client side
@@ -167,6 +167,12 @@ async function createRating(data: CreateRatingData, token?: string) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
+    
+    // Handle authentication errors specifically
+    if (response.status === 401) {
+      throw new Error(error.message || 'Missing Authorization header');
+    }
+    
     throw new Error(error.message || error.error || 'Failed to create rating');
   }
   
@@ -189,6 +195,12 @@ async function updateRating(ratingId: string, data: UpdateRatingData, token?: st
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
+    
+    // Handle authentication errors specifically
+    if (response.status === 401) {
+      throw new Error(error.message || 'Missing Authorization header');
+    }
+    
     throw new Error(error.message || error.error || 'Failed to update rating');
   }
   

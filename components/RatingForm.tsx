@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Star, Send, X, Edit3 } from 'lucide-react';
 import { useCreateRating, useUpdateRating, type CreateRatingData, type UpdateRatingData } from '@/hooks/useRatings';
 import { useLocale } from '@/hooks/useLocale';
+import { backgroundSync } from '@/lib/background-sync';
+import AuthModal from '@/components/AuthModal';
 
 interface RatingFormProps {
   productId: string;
@@ -35,6 +37,7 @@ export function RatingForm({
     ar: existingRating?.comment?.ar || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const createRatingMutation = useCreateRating();
   const updateRatingMutation = useUpdateRating();
@@ -139,6 +142,15 @@ export function RatingForm({
         console.log('Rating created successfully:', result);
       }
 
+      // Background sync for form submission
+      await backgroundSync.syncFormSubmission('review', {
+        productId,
+        rating,
+        comment: commentData,
+        action: isEditing ? 'update' : 'create',
+        ratingId: isEditing ? existingRating._id : undefined
+      });
+
       // Reset form
       if (!isEditing) {
         setRating(0);
@@ -149,7 +161,20 @@ export function RatingForm({
       onSuccess?.();
     } catch (error) {
       console.error('Error submitting rating:', error);
-      alert(error instanceof Error ? error.message : 'Failed to submit rating');
+      
+      // Check if error is due to authentication
+      if (error instanceof Error && (
+        error.message.includes('401') || 
+        error.message.includes('Unauthorized') ||
+        error.message.includes('Authentication required') ||
+        error.message.includes('Please log in') ||
+        error.message.includes('Missing Authorization header')
+      )) {
+        // Open login modal instead of showing alert
+        setIsAuthModalOpen(true);
+      } else {
+        alert(error instanceof Error ? error.message : 'Failed to submit rating');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -295,6 +320,18 @@ export function RatingForm({
           )}
         </div>
       </form>
+      
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode="login"
+        onSuccess={() => {
+          setIsAuthModalOpen(false);
+          // Retry the rating submission after successful login
+          handleSubmit();
+        }}
+      />
     </div>
   );
 }

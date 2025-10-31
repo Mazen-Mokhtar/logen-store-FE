@@ -176,10 +176,10 @@ export default function OrderPage({ params }: OrderPageProps) {
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900">
-                            {formatPrice(item.price * item.quantity)}
+                            {formatPrice(item.price * item.quantity, item.currency || order.currency)}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {formatPrice(item.price)} each
+                            {formatPrice(item.price, item.currency || order.currency)} each
                           </p>
                         </div>
                       </div>
@@ -225,7 +225,7 @@ export default function OrderPage({ params }: OrderPageProps) {
                 <div className="space-y-3">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>{formatPrice(order.totalAmount)}</span>
+                    <span>{formatPrice(order.totalAmount, order.currency)}</span>
                   </div>
                   
                   {/* Discount section removed as originalAmount is not available in Order interface */}
@@ -234,7 +234,7 @@ export default function OrderPage({ params }: OrderPageProps) {
                   
                   <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>{formatPrice(order.totalAmount)}</span>
+                    <span>{formatPrice(order.totalAmount, order.currency)}</span>
                   </div>
                 </div>
               </div>

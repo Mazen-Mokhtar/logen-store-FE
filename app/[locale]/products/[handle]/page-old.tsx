@@ -16,7 +16,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useNotificationStore } from '@/lib/store';
 
 // Lazy load related products section
-const ProductCard = dynamic(() => import('@/components/ProductCard'), {
+const OptimizedProductCard = dynamic(() => import('@/components/OptimizedProductCard'), {
   loading: () => (
     <div className="animate-pulse space-y-4">
       <div className="aspect-square bg-gray-200 rounded-2xl"></div>
@@ -370,7 +370,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                       <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                     </div>
                   }>
-                    <ProductCard product={relatedProduct} />
+                    <OptimizedProductCard product={relatedProduct} />
                   </Suspense>
                 </div>
               ))}

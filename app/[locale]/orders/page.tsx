@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -33,11 +33,16 @@ const statusColors = {
 
 export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
   const { isAuthenticated, isLoading, user } = useAuth();
   const { orders, loading, error, pagination, fetchMore, hasMore } = useOrders({
     status: statusFilter || undefined,
     limit: 10,
   });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   if (isLoading) {
     return (
@@ -51,7 +56,7 @@ export default function OrdersPage() {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          {isClient && <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />}
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h1>
           <p className="text-gray-600 mb-6">Please sign in to view your orders</p>
           <Link
@@ -132,7 +137,7 @@ export default function OrdersPage() {
             </div>
           ) : error ? (
             <div className="text-center py-16">
-              <XCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+              {isClient && <XCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />}
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Orders</h2>
               <p className="text-gray-600 mb-4">{error}</p>
               <button
@@ -144,7 +149,7 @@ export default function OrdersPage() {
             </div>
           ) : orders.length === 0 ? (
             <div className="text-center py-16">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              {isClient && <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />}
               <h2 className="text-xl font-semibold text-gray-900 mb-2">No Orders Found</h2>
               <p className="text-gray-600 mb-6">You haven't placed any orders yet</p>
               <Link
@@ -178,7 +183,7 @@ export default function OrdersPage() {
                           </p>
                         </div>
                         <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${statusColorClass}`}>
-                          <StatusIcon className="w-4 h-4" />
+                          {isClient && <StatusIcon className="w-4 h-4" />}
                           <span className="text-sm font-medium">
                             {order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </span>
@@ -202,7 +207,7 @@ export default function OrdersPage() {
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-gray-900 truncate">{item.title}</p>
                                 <p className="text-sm text-gray-500">
-                                  Qty: {item.quantity} • {formatPrice(item.price)}
+                                  Qty: {item.quantity} • {formatPrice(item.price, item.currency || order.currency)}
                                 </p>
                               </div>
                             </div>
@@ -223,7 +228,7 @@ export default function OrdersPage() {
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div>
                           <p className="text-lg font-bold text-gray-900">
-                            {formatPrice(order.totalAmount)}
+                            {formatPrice(order.totalAmount, order.currency)}
                           </p>
                           <p className="text-sm text-gray-500">
                             {order.currency} • {order.paymentMethod.toUpperCase()}

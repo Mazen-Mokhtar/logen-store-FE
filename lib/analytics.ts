@@ -1,4 +1,5 @@
 import { config } from './config';
+import { backgroundSync } from './background-sync';
 
 // Analytics event types
 export interface AnalyticsEvent {
@@ -99,6 +100,13 @@ class Analytics {
 
     // Send to other analytics services
     this.sendToCustomAnalytics(event);
+
+    // Background sync for analytics events
+    backgroundSync.syncAnalyticsEvent(
+      event.name,
+      event.properties || {},
+      event.userId
+    );
   }
 
   private sendToCustomAnalytics(event: AnalyticsEvent) {

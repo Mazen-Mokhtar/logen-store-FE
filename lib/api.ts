@@ -49,6 +49,7 @@ export interface Product {
     ar: string;
   };
   price: number;
+  currency?: string;
   images: Array<{
     secure_url: string;
     public_id: string;
@@ -75,6 +76,11 @@ export interface Product {
     hex?: string;
     available: boolean;
   }>;
+  warranty?: {
+    hasWarranty: boolean;
+    warrantyPeriod?: number;
+    warrantyType?: 'seller' | 'manufacturer' | 'extended';
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -175,6 +181,28 @@ class ApiClient {
     return headers;
   }
 
+  private getApiUrl(endpoint: string): string {
+    // Remove leading slash if present to avoid double slashes
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    
+    // Add v1 version to the path for authentication endpoints
+    return `${this.baseURL}/v1/${cleanEndpoint}`;
+  }
+
+  private getCheckoutApiUrl(endpoint: string): string {
+    // For checkout endpoints, use the frontend API routes without v1
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    return `${baseUrl}/api/${cleanEndpoint}`;
+  }
+
+  private getOrderApiUrl(endpoint: string): string {
+    // For order endpoints, use the frontend API routes without v1
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    return `${baseUrl}/api/${cleanEndpoint}`;
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     const data = await response.json();
 
@@ -187,7 +215,7 @@ class ApiClient {
 
   // Authentication APIs
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${this.baseURL}/auth/login`, {
+    const response = await fetch(this.getApiUrl('auth/login'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ email, password }),
@@ -204,7 +232,7 @@ class ApiClient {
     userName: string;
     phone: string;
   }): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseURL}/auth/signup`, {
+    const response = await fetch(this.getApiUrl('auth/signup'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify(userData),
@@ -214,7 +242,7 @@ class ApiClient {
   }
 
   async confirmEmail(email: string, code: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseURL}/auth/confirm-email`, {
+    const response = await fetch(this.getApiUrl('auth/confirm-email'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ email, code }),
@@ -224,7 +252,7 @@ class ApiClient {
   }
 
   async getUserProfile(): Promise<User> {
-    const response = await fetch(`${this.baseURL}/user/profile`, {
+    const response = await fetch(this.getApiUrl('user/profile'), {
       headers: this.getHeaders(),
     });
 
@@ -233,7 +261,7 @@ class ApiClient {
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
-    const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
+    const response = await fetch(this.getApiUrl('auth/refresh-token'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ refreshToken }),
@@ -244,7 +272,7 @@ class ApiClient {
   }
 
   async logout(): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseURL}/auth/logout`, {
+    const response = await fetch(this.getApiUrl('auth/logout'), {
       method: 'POST',
       headers: this.getHeaders(),
     });
@@ -277,7 +305,8 @@ class ApiClient {
     if (params?.inStock !== undefined) searchParams.append('inStock', params.inStock.toString());
     if (params?.sort) searchParams.append('sort', params.sort);
 
-    const response = await fetch(`${this.baseURL}/products?${searchParams}`, {
+const response = await fetch(this.getApiUrl(`products?${searchParams}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -299,53 +328,29 @@ class ApiClient {
   }
 
   async getProductById(productId: string): Promise<Product> {
-    const response = await fetch(`${this.baseURL}/products/${encodeURIComponent(productId)}`, {
+    const response = await fetch(this.getApiUrl(`products/${encodeURIComponent(productId)}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Product not found');
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    const data = await this.handleResponse<ApiResponse<Product>>(response);
+    if (!data.data) {
+      throw new Error('Product not found');
     }
-
-    const data = await response.json();
-    
-    // Handle both direct product response and wrapped response
-    if (data.success && data.data) {
-      return data.data;
-    } else if (data._id) {
-      return data;
-    } else {
-      throw new Error('Invalid product data received');
-    }
+    return data.data;
   }
 
   async getProductByHandle(handle: string): Promise<Product> {
-    const response = await fetch(`${this.baseURL}/products/handle/${encodeURIComponent(handle)}`, {
+    const response = await fetch(this.getApiUrl(`products/handle/${encodeURIComponent(handle)}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Product not found');
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    const data = await this.handleResponse<ApiResponse<Product>>(response);
+    if (!data.data) {
+      throw new Error('Product not found');
     }
-
-    const data = await response.json();
-    
-    // Handle both direct product response and wrapped response
-    if (data.success && data.data) {
-      return data.data;
-    } else if (data._id) {
-      return data;
-    } else {
-      throw new Error('Invalid product data received');
-    }
+    return data.data;
   }
 
   // Category APIs
@@ -363,7 +368,8 @@ class ApiClient {
     if (params?.type) searchParams.append('type', params.type);
     if (params?.sort) searchParams.append('sort', params.sort);
 
-    const response = await fetch(`${this.baseURL}/category/AllCategory?${searchParams}`, {
+const response = await fetch(this.getApiUrl(`category/AllCategory?${searchParams}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -372,7 +378,8 @@ class ApiClient {
   }
 
   async getCategoryById(categoryId: string): Promise<Category> {
-    const response = await fetch(`${this.baseURL}/category/${categoryId}`, {
+    const response = await fetch(this.getApiUrl(`category/${categoryId}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -400,7 +407,7 @@ class ApiClient {
     couponCode?: string;
     note?: string;
   }): Promise<Order> {
-    const response = await fetch(`${this.baseURL}/order/cart`, {
+    const response = await fetch(this.getApiUrl('order/cart'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(orderData),
@@ -429,7 +436,8 @@ class ApiClient {
     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
-    const response = await fetch(`${this.baseURL}/order?${searchParams}`, {
+    const response = await fetch(this.getApiUrl(`order?${searchParams}`), {
+      method: 'GET',
       headers: this.getHeaders(),
     });
 
@@ -441,7 +449,8 @@ class ApiClient {
   }
 
   async getOrderById(orderId: string): Promise<Order> {
-    const response = await fetch(`${this.baseURL}/order/${orderId}`, {
+    const response = await fetch(this.getApiUrl(`order/${orderId}`), {
+      method: 'GET',
       headers: this.getHeaders(),
     });
 
@@ -454,7 +463,7 @@ class ApiClient {
     sessionId?: string;
     finalAmount: number;
   }> {
-    const response = await fetch(`${this.baseURL}/order/${orderId}/checkout`, {
+    const response = await fetch(this.getApiUrl(`order/${orderId}/checkout`), {
       method: 'POST',
       headers: this.getHeaders(),
     });
@@ -466,7 +475,7 @@ class ApiClient {
   // Checkout APIs
   async processCheckout(checkoutData: CheckoutRequest): Promise<CheckoutResponse> {
     console.log('API Client - processCheckout data:', checkoutData);
-    const response = await fetch(`${this.baseURL}/checkout`, {
+    const response = await fetch(this.getCheckoutApiUrl('checkout'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify(checkoutData),
@@ -477,7 +486,7 @@ class ApiClient {
 
   async processAuthenticatedCheckout(checkoutData: Omit<CheckoutRequest, 'guestInfo'>): Promise<CheckoutResponse> {
     console.log('API Client - processAuthenticatedCheckout data:', checkoutData);
-    const response = await fetch(`${this.baseURL}/checkout/authenticated`, {
+    const response = await fetch(this.getCheckoutApiUrl('checkout/authenticated'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(checkoutData),
@@ -494,7 +503,8 @@ class ApiClient {
     paymentGateway: string;
     createdAt: string;
   }> {
-    const response = await fetch(`${this.baseURL}/checkout/order/${orderId}/status`, {
+const response = await fetch(this.getCheckoutApiUrl(`checkout/order/${orderId}/status`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -512,7 +522,8 @@ class ApiClient {
     if (params.email) queryParams.append('email', params.email);
     if (params.phone) queryParams.append('phone', params.phone);
 
-    const response = await fetch(`${this.baseURL}/order/track?${queryParams.toString()}`, {
+const response = await fetch(this.getOrderApiUrl(`order/track?${queryParams.toString()}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -532,7 +543,7 @@ class ApiClient {
     discountAmount: number;
     finalAmount: number;
   }> {
-    const response = await fetch(`${this.baseURL}/coupon/validate`, {
+    const response = await fetch(this.getApiUrl('coupon/validate'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ code, orderAmount }),
@@ -557,7 +568,8 @@ class ApiClient {
       reason: string;
     };
   }> {
-    const response = await fetch(`${this.baseURL}/coupon/details/${couponCode}`, {
+const response = await fetch(this.getApiUrl(`coupon/details/${couponCode}`), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 
@@ -567,7 +579,8 @@ class ApiClient {
 
   // Health Check
   async healthCheck(): Promise<{ status: string; uptime: number }> {
-    const response = await fetch(`${this.baseURL}/health`, {
+    const response = await fetch(this.getApiUrl('health'), {
+      method: 'GET',
       headers: this.getHeaders(false),
     });
 

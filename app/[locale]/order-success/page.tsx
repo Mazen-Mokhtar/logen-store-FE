@@ -1,17 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { CheckCircle, Package, ArrowRight, Search } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { useAuth } from '@/hooks/useAuth';
 import { apiClient, handleApiError } from '@/lib/api';
+import IntelligentLink from '@/components/IntelligentLink';
+
+// Lazy load notification prompt
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order');
   const [orderStatus, setOrderStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +34,11 @@ export default function OrderSuccessPage() {
       try {
         const status = await apiClient.getOrderStatus(orderId);
         setOrderStatus(status);
+        
+        // Show notification prompt after successful order
+        setTimeout(() => {
+          setShowNotificationPrompt(true);
+        }, 1500);
       } catch (err) {
         setError(handleApiError(err));
       } finally {
@@ -50,12 +64,12 @@ export default function OrderSuccessPage() {
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
           <p className="text-gray-600 mb-6">{error || 'Unable to find order details'}</p>
-          <Link
+          <IntelligentLink
             href="/"
             className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Continue Shopping
-          </Link>
+          </IntelligentLink>
         </div>
       </div>
     );
@@ -115,29 +129,29 @@ export default function OrderSuccessPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
+            <IntelligentLink
               href={`/orders/${orderStatus.orderId}`}
               className="inline-flex items-center justify-center space-x-2 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               <Package className="w-5 h-5" />
               <span>View Order Details</span>
-            </Link>
+            </IntelligentLink>
             
-            <Link
+            <IntelligentLink
               href="/track-order"
               className="inline-flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Search className="w-5 h-5" />
               <span>Track Order</span>
-            </Link>
+            </IntelligentLink>
             
-            <Link
+            <IntelligentLink
               href="/collections"
               className="inline-flex items-center justify-center space-x-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <span>Continue Shopping</span>
               <ArrowRight className="w-5 h-5" />
-            </Link>
+            </IntelligentLink>
           </div>
 
           {/* Additional Info */}
@@ -150,6 +164,13 @@ export default function OrderSuccessPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Notification Prompt */}
+        <NotificationPrompt
+          trigger="order-complete"
+          isVisible={showNotificationPrompt}
+          onClose={() => setShowNotificationPrompt(false)}
+        />
       </div>
     </div>
   );

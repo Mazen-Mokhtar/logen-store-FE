@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, Category, handleApiError } from '@/lib/api';
+import { queryKeys } from '@/lib/data-fetching/react-query-config';
 
 interface UseCategoriesOptions {
   page?: number;
@@ -17,11 +19,21 @@ interface UseCategoriesReturn {
   refetch: () => Promise<void>;
 }
 
-export function useCategories(options: UseCategoriesOptions = {}): UseCategoriesReturn {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Fetch function for categories
+async function fetchCategories(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  sort?: string;
+}) {
+  const result = await apiClient.getCategories(params);
+  return Array.isArray(result) ? result : [];
+}
 
+export function useCategories(options: UseCategoriesOptions = {}): UseCategoriesReturn {
+  const queryClient = useQueryClient();
+  
   const {
     page = 1,
     limit = 50,
@@ -31,38 +43,36 @@ export function useCategories(options: UseCategoriesOptions = {}): UseCategories
     autoFetch = true,
   } = options;
 
-  const fetchCategories = async () => {
-    setLoading(true);
-    setError(null);
+  // Create query key based on filters
+  const queryKey = queryKeys.collections.list({
+    page,
+    limit,
+    search,
+    type,
+    sort,
+  });
 
-    try {
-      const result = await apiClient.getCategories({
-        page,
-        limit,
-        search,
-        type,
-        sort,
-      });
-
-      setCategories(Array.isArray(result) ? result : []);
-    } catch (err) {
-      setError(handleApiError(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (autoFetch) {
-      fetchCategories();
-    }
-  }, [search, type, sort, autoFetch]);
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchCategories({
+      page,
+      limit,
+      search,
+      type,
+      sort,
+    }),
+    enabled: autoFetch,
+    staleTime: 10 * 60 * 1000, // 10 minutes - categories change less frequently
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep categories in cache longer
+    refetchOnWindowFocus: false, // Categories don't change often
+    retry: 2,
+  });
 
   return {
-    categories,
-    loading,
-    error,
-    refetch: fetchCategories,
+    categories: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? handleApiError(query.error) : null,
+    refetch: query.refetch,
   };
 }
 

@@ -92,53 +92,9 @@ export default function GSAPScrollAnimations({ containerRef }: GSAPScrollAnimati
           );
         }
 
-        // Product cards stagger animation - check if elements exist first
-        const productCards = document.querySelectorAll('.product-card');
-        if (productCards.length > 0) {
-          gsap.fromTo('.product-card', 
-            { y: 80, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.8,
-              ease: 'power3.out',
-              stagger: 0.15,
-              force3D: true,
-              scrollTrigger: {
-                trigger: '.products-section',
-                start: 'top 80%',
-                end: 'bottom 20%',
-                toggleActions: 'play none none reverse',
-                fastScrollEnd: true,
-                refreshPriority: -1,
-                invalidateOnRefresh: true,
-              }
-            }
-          );
-        }
+        // Product cards animation removed to prevent page-wide effects
 
-        // Section titles animation - check if elements exist first
-        const sectionTitles = document.querySelectorAll('.section-title');
-        if (sectionTitles.length > 0) {
-          gsap.fromTo('.section-title', 
-            { y: 50, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.8,
-              ease: 'power3.out',
-              force3D: true,
-              scrollTrigger: {
-                trigger: '.section-title',
-                start: 'top 85%',
-                toggleActions: 'play none none reverse',
-                fastScrollEnd: true,
-                refreshPriority: -1,
-                invalidateOnRefresh: true,
-              }
-            }
-          );
-        }
+        // Section titles animation removed to prevent page-wide effects
 
       }, containerRef);
 

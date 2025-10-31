@@ -181,6 +181,59 @@ class MemoryCache {
   }
 }
 
+// Client-side cache utilities for React Query
+export const clientCacheUtils = {
+  // Generate cache keys for products
+  getProductCacheKey: (category?: string, page?: number, limit?: number, search?: string) => {
+    const params = new URLSearchParams();
+    if (category && category !== 'all') params.set('category', category);
+    if (page && page > 0) params.set('page', page.toString());
+    if (limit && limit > 0) params.set('limit', limit.toString());
+    if (search && search.trim()) params.set('search', search.trim());
+    
+    // Sort parameters for consistent cache keys
+    const sortedParams = Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+    
+    return ['products', sortedParams];
+  },
+
+  // Generate cache keys for categories
+  getCategoryCacheKey: () => ['categories'],
+
+  // Cache invalidation helpers
+  invalidateProducts: (queryClient: any) => {
+    queryClient.invalidateQueries({ 
+      queryKey: ['products'],
+      exact: false // Invalidate all product-related queries
+    });
+  },
+
+  invalidateCategories: (queryClient: any) => {
+    queryClient.invalidateQueries({ 
+      queryKey: ['categories'],
+      exact: false // Invalidate all category-related queries
+    });
+  },
+
+  // Prefetch products for a category
+  prefetchCategoryProducts: async (queryClient: any, category: string, apiClient: any) => {
+    const cacheKey = clientCacheUtils.getProductCacheKey(category, 1, 12);
+    await queryClient.prefetchQuery({
+      queryKey: cacheKey,
+      queryFn: () => apiClient.getProducts({ 
+        category: category === 'all' ? undefined : category, 
+        page: 1, 
+        limit: 12 
+      }),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    });
+  },
+};
+
 export const memoryCache = new MemoryCache();
 
 // Cleanup expired cache entries every 5 minutes

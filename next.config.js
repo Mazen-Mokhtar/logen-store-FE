@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Performance optimizations
@@ -7,6 +11,19 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp'],
     webVitalsAttribution: ['CLS', 'LCP'],
     gzipSize: true,
+    // Add performance optimizations
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+    // Optimize font loading
+    fontLoaders: [
+      { loader: '@next/font/google', options: { subsets: ['latin', 'arabic'] } },
+    ],
   },
 
   // Image optimization
@@ -23,6 +40,36 @@ const nextConfig = {
         hostname: 'fra.cloud.appwrite.io',
         port: '',
         pathname: '/v1/storage/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'm.media-amazon.com',
+        port: '',
+        pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.shopify.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.mobilaty.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.joyroom.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.ijoyroom.com',
+        port: '',
+        pathname: '/**',
       },
     ],
     // Add domains for backward compatibility
@@ -56,20 +103,89 @@ const nextConfig = {
     if (!dev && !isServer) {
       // Enable tree shaking
       config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
       
       // Minimize CSS
       config.optimization.minimizer = config.optimization.minimizer || [];
       
-      // Split chunks for better caching
+      // Advanced chunk splitting for enterprise-grade performance
       config.optimization.splitChunks = {
         chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
+        minChunks: 1,
+        maxAsyncRequests: 30,
+        maxInitialRequests: 30,
         cacheGroups: {
+          // React core libraries
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react-vendor',
+            chunks: 'all',
+            priority: 30,
+            enforce: true,
+          },
+          
+          // Animation libraries (heavy)
+          animations: {
+            test: /[\\/]node_modules[\\/](framer-motion|gsap)[\\/]/,
+            name: 'animations-vendor',
+            chunks: 'all',
+            priority: 25,
+            enforce: true,
+          },
+          
+          // Data fetching libraries
+          dataFetching: {
+            test: /[\\/]node_modules[\\/](@tanstack[\\/]react-query|swr)[\\/]/,
+            name: 'data-vendor',
+            chunks: 'all',
+            priority: 25,
+            enforce: true,
+          },
+          
+          // UI component libraries
+          ui: {
+            test: /[\\/]node_modules[\\/](@headlessui|@heroicons|lucide-react|react-intersection-observer)[\\/]/,
+            name: 'ui-vendor',
+            chunks: 'all',
+            priority: 20,
+          },
+          
+          // Utility libraries
+          utils: {
+            test: /[\\/]node_modules[\\/](lodash|date-fns|clsx|tailwind-merge|uuid)[\\/]/,
+            name: 'utils-vendor',
+            chunks: 'all',
+            priority: 15,
+          },
+          
+          // Internationalization
+          i18n: {
+            test: /[\\/]node_modules[\\/](next-intl)[\\/]/,
+            name: 'i18n-vendor',
+            chunks: 'all',
+            priority: 15,
+          },
+          
+          // State management
+          state: {
+            test: /[\\/]node_modules[\\/](zustand)[\\/]/,
+            name: 'state-vendor',
+            chunks: 'all',
+            priority: 15,
+          },
+          
+          // Common vendor chunk for remaining node_modules
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
             priority: 10,
+            minChunks: 2,
           },
+          
+          // Common application code
           common: {
             name: 'common',
             minChunks: 2,
@@ -77,20 +193,55 @@ const nextConfig = {
             priority: 5,
             reuseExistingChunk: true,
           },
-          framerMotion: {
-            test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-            name: 'framer-motion',
+          
+          // Page-specific chunks
+          pages: {
+            test: /[\\/](app|pages)[\\/]/,
+            name: 'pages',
             chunks: 'all',
-            priority: 20,
+            priority: 8,
+            minChunks: 2,
           },
-          reactQuery: {
-            test: /[\\/]node_modules[\\/]@tanstack[\\/]react-query[\\/]/,
-            name: 'react-query',
+          
+          // Component chunks
+          components: {
+            test: /[\\/]components[\\/]/,
+            name: 'components',
             chunks: 'all',
-            priority: 20,
+            priority: 7,
+            minChunks: 2,
+          },
+          
+          // Hooks and utilities
+          hooks: {
+            test: /[\\/](hooks|lib|utils)[\\/]/,
+            name: 'hooks-utils',
+            chunks: 'all',
+            priority: 6,
+            minChunks: 2,
           },
         },
       };
+      
+      // Runtime chunk optimization
+      config.optimization.runtimeChunk = {
+        name: 'runtime',
+      };
+      
+      // Module concatenation for better tree shaking
+      config.optimization.concatenateModules = true;
+      
+      // Optimize module IDs for better caching
+      config.optimization.moduleIds = 'deterministic';
+      config.optimization.chunkIds = 'deterministic';
+    }
+
+    // Development optimizations
+    if (dev) {
+      // Faster builds in development
+      config.optimization.removeAvailableModules = false;
+      config.optimization.removeEmptyChunks = false;
+      config.optimization.splitChunks = false;
     }
 
     // Bundle analyzer (optional)
@@ -101,6 +252,15 @@ const nextConfig = {
           analyzerMode: 'static',
           openAnalyzer: false,
           reportFilename: isServer ? '../analyze/server.html' : './analyze/client.html',
+        })
+      );
+    }
+
+    // Performance monitoring plugin
+    if (!dev && !isServer) {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'process.env.BUNDLE_ANALYZE': JSON.stringify(process.env.ANALYZE === 'true'),
         })
       );
     }

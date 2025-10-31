@@ -1,67 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Mock database - in a real app, this would be a proper database
-// This should be shared with the checkout routes
-const orders: any[] = [];
+// Backend API URL
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:3000/api';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const orderId = params.orderId;
-
-    if (!orderId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'MISSING_ORDER_ID',
-            message: 'Order ID is required'
-          }
-        },
-        { status: 400 }
-      );
-    }
-
-    // Find order by ID
-    const order = orders.find(o => o._id === orderId);
-
-    if (!order) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'ORDER_NOT_FOUND',
-            message: 'Order not found'
-          }
-        },
-        { status: 404 }
-      );
-    }
-
-    // Return order status
-    return NextResponse.json({
-      success: true,
-      data: {
-        orderId: order._id,
-        status: order.status,
-        totalAmount: order.totalAmount,
-        currency: order.currency,
-        paymentGateway: order.paymentGateway,
-        createdAt: order.createdAt
+    const { orderId } = params;
+    
+    // Build the backend URL - use v1 path since that's where the actual implementation is
+    const backendUrl = `${BACKEND_API_URL}/v1/checkout/order/${orderId}/status`;
+    
+    console.log('Proxying order status request to backend:', backendUrl);
+    
+    // Forward the request to the backend
+    const response = await fetch(backendUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward any authorization headers if present
+        ...(request.headers.get('authorization') && {
+          'authorization': request.headers.get('authorization')!
+        })
       }
     });
 
+    if (!response.ok) {
+      console.error('Backend response not ok:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Backend error response:', errorText);
+      
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Backend API error: ${response.status} ${response.statusText}`,
+          error: errorText
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log('Backend order status response received:', data);
+
+    // Return the backend response
+    return NextResponse.json(data);
+
   } catch (error) {
-    console.error('Order Status API Error:', error);
+    console.error('Order Status API Proxy Error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to fetch order status'
-        }
+        message: 'Failed to get order status',
+        error: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

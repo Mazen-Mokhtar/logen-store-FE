@@ -41,8 +41,13 @@
     "remove": "Remove",
     "continueShopping": "Continue Shopping"
   },
+  "common": {
+    "description": "Premium fashion for the modern lifestyle",
+    "quickLinks": "Quick Links",
+    "legal": "Legal"
+  },
   "footer": {
-    "copyright": "© 2025 StyleHub. All rights reserved.",
+    "copyright": "© 2024 Logen Store. All rights reserved.",
     "about": "About Us",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"

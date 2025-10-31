@@ -117,15 +117,17 @@ export default function Header() {
             <button
               onClick={openCart}
               className="relative p-2 text-gray-700 hover:text-gray-900 transition-colors"
-              aria-label={`Shopping cart with ${totalItems} items`}
+              aria-label={mounted ? `Shopping cart with ${totalItems} items` : "Shopping cart"}
               style={{ willChange: 'transform' }}
+              suppressHydrationWarning={true}
             >
               <ShoppingBag className="w-6 h-6" />
-              {totalItems > 0 && (
+              {mounted && totalItems > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  suppressHydrationWarning={true}
                 >
                   {totalItems}
                 </motion.span>

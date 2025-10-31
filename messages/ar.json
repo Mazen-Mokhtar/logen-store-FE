@@ -30,7 +30,10 @@
     "cart": "السلة",
     "account": "الحساب",
     "orders": "الطلبات",
-    "wishlist": "المفضلة"
+    "wishlist": "المفضلة",
+    "aboutUs": "من نحن",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة"
   },
   "seo": {
     "defaultTitle": "ستايل هب - متجر الأزياء المميز",
@@ -93,5 +96,57 @@
     "continueShopping": "متابعة التسوق",
     "removeItem": "إزالة العنصر",
     "updateQuantity": "تحديث الكمية"
+  },
+  "pages": {
+    "aboutUs": {
+      "title": "من نحن",
+      "subtitle": "تعرف على المزيد حول شركتنا ومهمتنا",
+      "ourStory": "قصتنا",
+      "ourMission": "مهمتنا",
+      "ourVision": "رؤيتنا",
+      "ourValues": "قيمنا",
+      "foundedIn": "تأسست في",
+      "companyName": "اسم الشركة",
+      "registrationNumber": "رقم التسجيل"
+    },
+    "privacyPolicy": {
+      "title": "سياسة الخصوصية",
+      "subtitle": "كيف نجمع ونستخدم ونحمي معلوماتك",
+      "effectiveDate": "تاريخ السريان",
+      "lastUpdated": "آخر تحديث",
+      "dataCollection": "جمع البيانات",
+      "dataUsage": "كيف نستخدم بياناتك",
+      "dataProtection": "حماية البيانات",
+      "cookies": "ملفات تعريف الارتباط",
+      "thirdParty": "خدمات الطرف الثالث",
+      "userRights": "حقوقك",
+      "contact": "اتصل بنا"
+    },
+    "termsOfService": {
+      "title": "شروط الخدمة",
+      "subtitle": "الشروط والأحكام لاستخدام خدماتنا",
+      "effectiveDate": "تاريخ السريان",
+      "lastUpdated": "آخر تحديث",
+      "acceptance": "قبول الشروط",
+      "services": "خدماتنا",
+      "userResponsibilities": "مسؤوليات المستخدم",
+      "prohibited": "الأنشطة المحظورة",
+      "intellectual": "الملكية الفكرية",
+      "limitation": "تحديد المسؤولية",
+      "termination": "الإنهاء",
+      "governing": "القانون الحاكم",
+      "contact": "معلومات الاتصال"
+    }
+  },
+  "footer": {
+    "about": "من نحن",
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الخدمة",
+    "copyright": "© 2024 متجر لوجن. جميع الحقوق محفوظة."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "collections": "المجموعات",
+    "contact": "اتصل بنا"
   }
 }

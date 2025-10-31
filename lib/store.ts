@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { backgroundSync } from './background-sync';
 
 export interface CartItem {
   id: string;
@@ -9,6 +10,7 @@ export interface CartItem {
   quantity: number;
   size?: string;
   color?: string;
+  currency?: string;
 }
 
 interface CartStore {
@@ -22,6 +24,7 @@ interface CartStore {
   closeCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getCartCurrency: () => string;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -39,52 +42,117 @@ export const useCartStore = create<CartStore>()(
         );
 
         if (existingItem) {
+          const updatedQuantity = existingItem.quantity + (newItem.quantity || 1);
           set({
             items: items.map((item) =>
               item.id === existingItem.id &&
               item.size === existingItem.size &&
               item.color === existingItem.color
-                ? { ...item, quantity: item.quantity + (newItem.quantity || 1) }
+                ? { ...item, quantity: updatedQuantity }
                 : item
             ),
           });
+          
+          // Background sync for cart update
+          backgroundSync.syncCartUpdate(
+            existingItem.id, 
+            updatedQuantity,
+            // TODO: Add user ID when authentication is implemented
+            undefined
+          );
         } else {
+          const quantity = newItem.quantity || 1;
           set({
-            items: [...items, { ...newItem, quantity: newItem.quantity || 1 }],
+            items: [...items, { ...newItem, quantity }],
           });
+          
+          // Background sync for new cart item
+          backgroundSync.syncCartUpdate(
+            newItem.id, 
+            quantity,
+            // TODO: Add user ID when authentication is implemented
+            undefined
+          );
         }
       },
       removeItem: (id) => {
+        let removedProductId: string | undefined;
+        
         set({
           items: get().items.filter((item) => {
             // Handle both simple ID and composite ID (id-size-color)
             if (id.includes('-')) {
               const [itemId, size, color] = id.split('-');
-              return !(item.id === itemId && item.size === size && item.color === color);
+              const shouldRemove = item.id === itemId && item.size === size && item.color === color;
+              if (shouldRemove) {
+                removedProductId = itemId;
+              }
+              return !shouldRemove;
             }
-            return item.id !== id;
+            const shouldRemove = item.id === id;
+            if (shouldRemove) {
+              removedProductId = id;
+            }
+            return !shouldRemove;
           }),
         });
+        
+        // Background sync for cart removal
+        if (removedProductId) {
+          backgroundSync.syncCartRemove(
+            removedProductId,
+            // TODO: Add user ID when authentication is implemented
+            undefined
+          );
+        }
       },
       updateQuantity: (id, quantity) => {
         if (quantity <= 0) {
           get().removeItem(id);
           return;
         }
+        
+        let updatedProductId: string | undefined;
+        
         set({
           items: get().items.map((item) => {
             // Handle both simple ID and composite ID (id-size-color)
             if (id.includes('-')) {
               const [itemId, size, color] = id.split('-');
-              return (item.id === itemId && item.size === size && item.color === color)
-                ? { ...item, quantity }
-                : item;
+              const shouldUpdate = item.id === itemId && item.size === size && item.color === color;
+              if (shouldUpdate) {
+                updatedProductId = itemId;
+              }
+              return shouldUpdate ? { ...item, quantity } : item;
             }
-            return item.id === id ? { ...item, quantity } : item;
+            const shouldUpdate = item.id === id;
+            if (shouldUpdate) {
+              updatedProductId = id;
+            }
+            return shouldUpdate ? { ...item, quantity } : item;
           }),
         });
+        
+        // Background sync for quantity update
+        if (updatedProductId) {
+          backgroundSync.syncCartUpdate(
+            updatedProductId, 
+            quantity,
+            // TODO: Add user ID when authentication is implemented
+            undefined
+          );
+        }
       },
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        set({ items: [] });
+        
+        // Background sync for cart clear
+        // Note: This could be implemented as a special sync event
+        backgroundSync.syncAnalyticsEvent('cart-clear', {
+          timestamp: Date.now(),
+          itemCount: get().items.length
+        });
+      },
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       getTotalItems: () => {
@@ -93,11 +161,50 @@ export const useCartStore = create<CartStore>()(
       },
       getTotalPrice: () => {
         const items = get().items;
-        return Array.isArray(items) ? items.reduce(
-          (total, item) => total + item.price * item.quantity,
-          0
-        ) : 0;
-      },
+        if (!Array.isArray(items) || items.length === 0) return 0;
+        
+        // Group items by currency
+        const currencyGroups = items.reduce((groups: { [key: string]: number }, item) => {
+          const currency = item.currency || 'SAR';
+          groups[currency] = (groups[currency] || 0) + (item.price * item.quantity);
+          return groups;
+        }, {});
+        
+        // If all items have the same currency, return the total
+        const currencies = Object.keys(currencyGroups);
+        if (currencies.length === 1) {
+          return currencyGroups[currencies[0]];
+        }
+        
+        // If mixed currencies, convert all to SAR (base currency)
+        // This is a simplified conversion - in a real app, you'd use actual exchange rates
+        const exchangeRates: { [key: string]: number } = {
+          'SAR': 1,
+          'USD': 3.75, // 1 USD = 3.75 SAR
+          'EUR': 4.1,  // 1 EUR = 4.1 SAR
+          'EGP': 0.12  // 1 EGP = 0.12 SAR
+        };
+        
+        return Object.entries(currencyGroups).reduce((total, [currency, amount]) => {
+           const rate = exchangeRates[currency] || 1;
+           return total + (amount * rate);
+         }, 0);
+       },
+       getCartCurrency: () => {
+         const items = get().items;
+         if (!Array.isArray(items) || items.length === 0) return 'SAR';
+         
+         // Get unique currencies in cart
+         const currencies = [...new Set(items.map(item => item.currency || 'SAR'))];
+         
+         // If all items have the same currency, return that currency
+         if (currencies.length === 1) {
+           return currencies[0];
+         }
+         
+         // If mixed currencies, return 'SAR' as the base currency for display
+         return 'SAR';
+       },
     }),
     {
       name: 'cart-storage',

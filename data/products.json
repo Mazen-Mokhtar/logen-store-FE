@@ -8,6 +8,7 @@
     "description_ar": "تيشيرت قطني فاخر بقصة واسعة وتصميم عصري. مثالي للإطلالات اليومية والستريت ستايل.",
     "price": 690,
     "originalPrice": 910,
+    "currency": "SAR",
     "images": ["/mvp-images/1.jpg", "/mvp-images/2.jpg"],
     "tags": ["oversize", "tee"],
     "category": "tshirts",
@@ -15,7 +16,12 @@
     "sale": true,
     "sizes": ["S", "M", "L", "XL"],
     "colors": ["Black", "White", "Gray"],
-    "rating": 4.5
+    "rating": 4.5,
+    "warranty": {
+      "hasWarranty": true,
+      "warrantyPeriod": 6,
+      "warrantyType": "seller"
+    }
   },
   {
     "id": "p2",
@@ -26,6 +32,7 @@
     "description_ar": "هودي من الصوف الناعم مع خيط قابل للتعديل. مريح وأنيق لأي موسم.",
     "price": 1290,
     "originalPrice": null,
+    "currency": "SAR",
     "images": ["/mvp-images/3.jpg", "/mvp-images/4.jpg"],
     "tags": ["hoodie", "premium"],
     "category": "hoodies",
@@ -44,6 +51,7 @@
     "description_ar": "بنطلون جوجر مريح مع حزام مطاطي. مثالي للتمارين والإطلالات اليومية.",
     "price": 890,
     "originalPrice": 1190,
+    "currency": "SAR",
     "images": ["/mvp-images/5.jpg", "/mvp-images/6.jpg"],
     "tags": ["jogger", "pants"],
     "category": "pants",
@@ -62,6 +70,7 @@
     "description_ar": "قميص بولو كلاسيكي من مزيج القطن الفاخر. أساسي للإطلالات الكاجوال الأنيقة.",
     "price": 590,
     "originalPrice": null,
+    "currency": "USD",
     "images": ["/mvp-images/7.jpg", "/mvp-images/8.jpg"],
     "tags": ["polo", "classic"],
     "category": "tshirts",
@@ -80,6 +89,7 @@
     "description_ar": "جاكيت جينز كلاسيكي بغسلة عتيقة. قطعة أساسية في الخزانة للطبقات.",
     "price": 1590,
     "originalPrice": 1890,
+    "currency": "SAR",
     "images": ["/mvp-images/9.jpg", "/mvp-images/10.jpg"],
     "tags": ["denim", "jacket"],
     "category": "jackets",
@@ -98,6 +108,7 @@
     "description_ar": "حذاء رياضي أبيض مريح مع جلد فاخر. مثالي للارتداء اليومي.",
     "price": 1890,
     "originalPrice": null,
+    "currency": "EUR",
     "images": ["/mvp-images/11.jpg", "/mvp-images/12.jpg"],
     "tags": ["sneakers", "shoes"],
     "category": "shoes",
@@ -106,6 +117,38 @@
     "sizes": ["40", "41", "42", "43", "44"],
     "colors": ["White", "Black", "Gray"],
     "rating": 4.8,
-    "featured": false
+    "featured": false,
+    "warranty": {
+      "hasWarranty": true,
+      "warrantyPeriod": 12,
+      "warrantyType": "manufacturer"
+    }
+  },
+  {
+    "id": "product-2-220",
+    "handle": "product-2-220",
+    "title_en": "Gaming Laptop Pro Max",
+    "title_ar": "لابتوب الألعاب برو ماكس",
+    "description_en": "High-performance gaming laptop with RTX 4080, 32GB RAM, and 1TB SSD. Perfect for gaming and professional work.",
+    "description_ar": "لابتوب ألعاب عالي الأداء مع RTX 4080 و 32 جيجا رام و 1 تيرا SSD. مثالي للألعاب والعمل المهني.",
+    "price": 2499.99,
+    "originalPrice": 2999.99,
+    "currency": "EGP",
+    "images": [
+      "https://fra.cloud.appwrite.io/v1/storage/buckets/6900d8a30009d750d7c2/files/690116a300210df9f464/view?project=6900d8500022bd692ec3",
+      "https://fra.cloud.appwrite.io/v1/storage/buckets/6900d8a30009d750d7c2/files/690116a4002686b6d67b/view?project=6900d8500022bd692ec3"
+    ],
+    "tags": ["gaming", "laptop", "high-performance", "RTX"],
+    "category": "laptops",
+    "inStock": true,
+    "sale": true,
+    "sizes": ["15 inch", "17 inch"],
+    "colors": ["Black", "Silver"],
+    "rating": 4.8,
+    "warranty": {
+      "hasWarranty": true,
+      "warrantyPeriod": 24,
+      "warrantyType": "manufacturer"
+    }
   }
 ]

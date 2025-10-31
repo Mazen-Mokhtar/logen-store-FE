@@ -10,10 +10,24 @@ import { SEOHead } from '@/components/SEOHead';
 import { AccessibilityProvider } from '@/components/Accessibility/AccessibilityProvider';
 import { SkipLinks } from '@/components/Accessibility/SkipLink';
 import { PerformanceMonitor } from '@/lib/performance';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import StructuredDataComponent from '@/components/StructuredData';
+import QueryProvider from '@/components/QueryProvider';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
 import '@/app/globals.css';
+import PageTransition from '@/components/PageTransition';
+
+// Lazy load notification components
+const NotificationToast = dynamic(() => import('@/components/NotificationToast'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const CartDrawer = dynamic(() => import('@/components/CartDrawer'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -100,93 +114,27 @@ export async function generateStaticParams() {
 
 export default function LocaleLayout({
   children,
-  params,
+  params: { locale }
 }: {
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  const { locale } = params;
-  
-  // Validate locale
-  if (!config.i18n.locales.includes(locale)) {
-    notFound();
-  }
-
-  const isRTL = config.i18n.rtlLocales.includes(locale as 'ar');
-
   return (
-    <html 
-      lang={locale} 
-      dir={isRTL ? 'rtl' : 'ltr'}
-      className={`${inter.variable} ${tajawal.variable} ${isRTL ? 'font-arabic' : ''}`}
-    >
-      <head>
-        <link rel="dns-prefetch" href={config.api.baseUrl} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
-        {/* Structured Data */}
-        <StructuredDataComponent type="website" />
-        <StructuredDataComponent type="organization" />
-        <StructuredDataComponent type="ecommerce" />
-      </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
-        <AccessibilityProvider>
-          <SkipLinks />
-          <ErrorBoundary>
-            <Layout locale={locale}>
-              {children}
-            </Layout>
-          </ErrorBoundary>
-        </AccessibilityProvider>
-
-        {/* Google Analytics */}
-        {config.analytics.googleAnalytics.trackingId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${config.analytics.googleAnalytics.trackingId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${config.analytics.googleAnalytics.trackingId}', {
-                  page_title: document.title,
-                  page_location: window.location.href,
-                });
-              `}
-            </Script>
-          </>
-        )}
-
-        {/* Performance Monitoring */}
-        <Script id="performance-monitor" strategy="afterInteractive">
-          {`
-            if (typeof window !== 'undefined') {
-              const monitor = new (${PerformanceMonitor.toString()})();
-              // Monitor is automatically initialized in constructor
-            }
-          `}
-        </Script>
-
-        {/* Service Worker Registration - Temporarily disabled for build testing */}
-        {/* <Script id="sw-register" strategy="afterInteractive">
-          {`
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                  .then(function(registration) {
-                    console.log('SW registered: ', registration);
-                  })
-                  .catch(function(registrationError) {
-                    console.log('SW registration failed: ', registrationError);
-                  });
-              });
-            }
-          `}
-        </Script> */}
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <body className={inter.className}>
+        <QueryProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            <PageTransition>
+              <main className="flex-1">
+                {children}
+              </main>
+            </PageTransition>
+            <Footer />
+            <CartDrawer />
+            <NotificationToast />
+          </div>
+        </QueryProvider>
       </body>
     </html>
   );

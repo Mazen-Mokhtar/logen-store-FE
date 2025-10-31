@@ -7,52 +7,63 @@ export default function Footer() {
   const messages = useMessages();
 
   return (
-    <footer className="bg-gray-900 text-white py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold mb-4">StyleHub</h3>
-            <p className="text-gray-400 max-w-md">
-              Premium fashion for the modern lifestyle. Discover your style with our curated collection of contemporary clothing.
+    <footer className="bg-gray-900 text-white py-8">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Logen Store</h3>
+            <p className="text-gray-400">
+              {messages.common?.description || 'Premium fashion for the modern lifestyle'}
             </p>
           </div>
-
-          {/* Quick Links */}
+          
           <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
-            <div className="space-y-2">
-              <Link href="/" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.nav.home}
-              </Link>
-              <Link href="/collections" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.nav.collections}
-              </Link>
-              <Link href="/contact" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.nav.contact}
-              </Link>
-            </div>
+            <h3 className="text-lg font-semibold mb-4">{messages.common?.quickLinks || 'Quick Links'}</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.nav?.home || 'Home'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.nav?.collections || 'Collections'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.nav?.contact || 'Contact'}
+                </Link>
+              </li>
+            </ul>
           </div>
-
-          {/* Legal */}
+          
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
-            <div className="space-y-2">
-              <Link href="/about" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.footer.about}
-              </Link>
-              <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.footer.privacy}
-              </Link>
-              <Link href="/terms" className="block text-gray-400 hover:text-white transition-colors">
-                {messages.footer.terms}
-              </Link>
-            </div>
+            <h3 className="text-lg font-semibold mb-4">{messages.common?.legal || 'Legal'}</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.footer?.about || 'About Us'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.footer?.privacy || 'Privacy Policy'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                  {messages.footer?.terms || 'Terms of Service'}
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
-
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>{messages.footer.copyright}</p>
+        
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+          <p className="text-gray-400">
+            {messages.footer?.copyright || '© 2024 Logen Store. All rights reserved.'}
+          </p>
         </div>
       </div>
     </footer>

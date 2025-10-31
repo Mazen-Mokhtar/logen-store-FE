@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -13,9 +13,17 @@ import { useCartStore } from '@/lib/store';
 import { useMessages } from '@/hooks/useMessages';
 import { formatPrice, decodeHtmlEntities } from '@/lib/utils';
 import { useNotificationStore } from '@/lib/store';
+import { getOptimizedImageProps, generateGradientBlurDataURL, RESPONSIVE_SIZES, imagePerformance } from '@/lib/image-optimization';
+import WarrantyBadge from '@/components/WarrantyBadge';
+
+// Lazy load notification prompt
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), {
+  ssr: false,
+  loading: () => null,
+});
 
 // Lazy load components with better loading states
-const ProductCard = dynamic(() => import('@/components/ProductCard'), {
+const OptimizedProductCard = dynamic(() => import('@/components/OptimizedProductCard'), {
   loading: () => {
     const ProductCardSkeleton = require('@/components/LoadingStates/ProductCardSkeleton').default;
     return <ProductCardSkeleton />;
@@ -71,7 +79,7 @@ interface ProductDetailClientProps {
 
 // Fetch related products with React Query
 async function fetchRelatedProducts(categoryId: string, productId: string) {
-  const response = await fetch(`/api/products?category=${categoryId}&limit=8`);
+  const response = await fetch(`/api/v1/products?category=${categoryId}&limit=8`);
   if (!response.ok) {
     throw new Error('Failed to fetch related products');
   }
@@ -91,10 +99,12 @@ export default function ProductDetailClient({
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showRatingForm, setShowRatingForm] = useState<boolean>(false);
-  const [editingRating, setEditingRating] = useState<any>(null);
-  
+  const [showRatingForm, setShowRatingForm] = useState(false);
+  const [editingRating, setEditingRating] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoadStart] = useState(() => performance.now());
   const router = useRouter();
   const { addItem } = useCartStore();
   const { addNotification } = useNotificationStore();
@@ -103,6 +113,33 @@ export default function ProductDetailClient({
   const isRTL = locale === 'ar';
   const title = isRTL ? product.title?.ar || product.title?.en : product.title?.en || product.title?.ar;
   const description = isRTL ? product.description?.ar || product.description?.en : product.description?.en || product.description?.ar;
+
+  // Generate optimized image props for main image
+  const mainImageUrl = product.images[selectedImage]?.secure_url || '/mvp-images/1.jpg';
+  const optimizedMainImageProps = getOptimizedImageProps(
+    mainImageUrl,
+    title,
+    {
+      sizes: RESPONSIVE_SIZES.productDetail,
+      quality: 'high',
+      fill: true,
+      priority: true,
+      style: {
+        objectFit: "contain",
+        objectPosition: "center",
+      },
+      className: `transition-transform duration-500 hover:scale-105 ${
+        imageLoaded ? 'opacity-100' : 'opacity-0'
+      }`,
+      placeholder: 'blur',
+      blurDataURL: generateGradientBlurDataURL(10, 10, ['#f3f4f6', '#e5e7eb']),
+    }
+  );
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+    imagePerformance.trackImageLoad(mainImageUrl, imageLoadStart);
+  }, [mainImageUrl, imageLoadStart]);
 
   // Fetch related products with React Query
   const { data: relatedProductsData = initialRelatedProducts } = useQuery({
@@ -140,12 +177,15 @@ export default function ProductDetailClient({
     const cartItem = {
       id: product._id,
       title: title,
-      price: product.price,
+      price: product.promotion?.isOnSale && product.promotion?.salePrice 
+        ? product.promotion.salePrice 
+        : product.price,
       image: product.images[0]?.secure_url || '/mvp-images/1.jpg',
       quantity,
       size: selectedSize,
       color: selectedColor,
       handle: product.handle,
+      currency: product.currency,
     };
 
     addItem(cartItem);
@@ -154,6 +194,9 @@ export default function ProductDetailClient({
       title: isRTL ? 'نجح' : 'Success',
       message: isRTL ? 'تم إضافة المنتج إلى السلة' : 'Product added to cart',
     });
+
+    // Show notification prompt after successful add to cart
+    setShowNotificationPrompt(true);
   };
 
   const handleShare = async () => {
@@ -227,15 +270,15 @@ export default function ProductDetailClient({
             className="space-y-4"
           >
             {/* Main Image */}
-            <div className="aspect-square relative overflow-hidden rounded-2xl bg-gray-100">
+            <div className="relative w-full aspect-square overflow-hidden rounded-2xl flex items-center justify-center bg-white">
               <Image
-                src={product.images[selectedImage]?.secure_url || '/mvp-images/1.jpg'}
-                alt={title}
-                fill
-                className="object-cover transition-transform duration-500 hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
+                {...optimizedMainImageProps}
+                onLoad={handleImageLoad}
+                onError={() => setImageLoaded(true)}
               />
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+              )}
               
               {/* Wishlist Button */}
               <button
@@ -260,25 +303,39 @@ export default function ProductDetailClient({
             {/* Thumbnail Images */}
             {Array.isArray(product.images) && product.images.length > 1 && (
               <div className="flex space-x-2 rtl:space-x-reverse overflow-x-auto">
-                {Array.isArray(product.images) && product.images.map((image: any, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index 
-                        ? 'border-black' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Image
-                      src={image.secure_url}
-                      alt={`${title} ${index + 1}`}
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                {Array.isArray(product.images) && product.images.map((image: any, index: number) => {
+                  const thumbnailProps = getOptimizedImageProps(
+                    image.secure_url,
+                    `${title} ${index + 1}`,
+                    {
+                      sizes: RESPONSIVE_SIZES.thumbnail,
+                      quality: 'medium',
+                      width: 80,
+                      height: 80,
+                      style: {
+                        objectFit: "contain",
+                        objectPosition: "center",
+                      },
+                      className: "w-full h-full",
+                      placeholder: 'blur',
+                      blurDataURL: generateGradientBlurDataURL(5, 5, ['#f3f4f6', '#e5e7eb']),
+                    }
+                  );
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors flex items-center justify-center bg-white ${
+                        selectedImage === index 
+                          ? 'border-black' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <Image {...thumbnailProps} />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </motion.div>
@@ -297,11 +354,16 @@ export default function ProductDetailClient({
               </h1>
               <div className="flex items-center space-x-4 rtl:space-x-reverse">
                 <span className="text-3xl font-bold text-gray-900">
-                  {formatPrice(product.price)}
+                  {formatPrice(
+                    product.promotion?.isOnSale && product.promotion?.salePrice 
+                      ? product.promotion.salePrice 
+                      : product.price, 
+                    product.currency
+                  )}
                 </span>
-                {product.promotion?.isOnSale && product.promotion.originalPrice && (
+                {product.promotion?.isOnSale && (product.promotion.originalPrice || product.price) && (
                   <span className="text-xl text-gray-500 line-through">
-                    {formatPrice(product.promotion.originalPrice)}
+                    {formatPrice(product.promotion.originalPrice || product.price, product.currency)}
                   </span>
                 )}
               </div>
@@ -313,6 +375,41 @@ export default function ProductDetailClient({
                 {decodeHtmlEntities(description)}
               </p>
             </div>
+
+            {/* Warranty Information */}
+            {product.warranty?.hasWarranty && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <WarrantyBadge warranty={product.warranty} locale={locale} size="lg" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {locale === 'ar' ? 'معلومات الضمان' : 'Warranty Information'}
+                    </h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>
+                        <span className="font-medium">
+                          {locale === 'ar' ? 'مدة الضمان:' : 'Warranty Period:'}
+                        </span>{' '}
+                        {product.warranty.warrantyPeriod} {locale === 'ar' ? 'شهر' : 'months'}
+                      </p>
+                      <p>
+                        <span className="font-medium">
+                          {locale === 'ar' ? 'نوع الضمان:' : 'Warranty Type:'}
+                        </span>{' '}
+                        {product.warranty.warrantyType === 'seller' 
+                          ? (locale === 'ar' ? 'ضمان البائع' : 'Seller Warranty')
+                          : product.warranty.warrantyType === 'manufacturer'
+                          ? (locale === 'ar' ? 'ضمان الشركة المصنعة' : 'Manufacturer Warranty')
+                          : (locale === 'ar' ? 'ضمان ممتد' : 'Extended Warranty')
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Product Rating */}
             <div className="border-t border-b border-gray-200 py-6">
@@ -568,12 +665,19 @@ export default function ProductDetailClient({
                     </div>
                   }
                 >
-                  <ProductCard product={relatedProduct} />
+                  <OptimizedProductCard product={relatedProduct} />
                 </Suspense>
               ))}
             </div>
           </motion.section>
         )}
+
+        {/* Notification Prompt */}
+        <NotificationPrompt
+          trigger="cart"
+          isVisible={showNotificationPrompt}
+          onClose={() => setShowNotificationPrompt(false)}
+        />
       </div>
     </div>
   );

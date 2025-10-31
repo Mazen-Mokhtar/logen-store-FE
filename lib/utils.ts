@@ -5,8 +5,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number): string {
-  return `${price.toLocaleString()} SAR`;
+export function formatPrice(price: number, currency?: string): string {
+  if (currency) {
+    // Use the currency-specific formatting
+    const currencySymbols: { [key: string]: string } = {
+      'SAR': 'ر.س',
+      'USD': '$',
+      'EUR': '€',
+      'EGP': 'EGP'
+    };
+    
+    const symbol = currencySymbols[currency] || currency;
+    return `${price.toLocaleString()} ${symbol}`;
+  }
+  
+  // Fallback to SAR if no currency specified
+  return `${price.toLocaleString()} ر.س`;
 }
 
 export function getImageUrl(path: string): string {

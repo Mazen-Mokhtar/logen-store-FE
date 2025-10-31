@@ -156,6 +156,11 @@ export interface Product {
     count: number;
   };
   reviewCount?: number;
+  warranty?: {
+    hasWarranty: boolean;
+    warrantyPeriod?: number;
+    warrantyType?: 'seller' | 'manufacturer' | 'extended';
+  };
 }
 
 // Category Types

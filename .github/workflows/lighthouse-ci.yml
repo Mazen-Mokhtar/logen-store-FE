@@ -1,0 +1,313 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  lighthouse-ci:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g @lhci/cli@0.12.x
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results-${{ matrix.node-version }}
+          path: |
+            .lighthouseci/
+            lighthouse-results/
+          retention-days: 30
+
+      - name: Comment PR with Lighthouse results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Read Lighthouse results
+            const resultsDir = '.lighthouseci';
+            if (!fs.existsSync(resultsDir)) {
+              console.log('No Lighthouse results found');
+              return;
+            }
+            
+            const manifestPath = path.join(resultsDir, 'manifest.json');
+            if (!fs.existsSync(manifestPath)) {
+              console.log('No manifest.json found');
+              return;
+            }
+            
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            const results = manifest.map(result => {
+              const report = JSON.parse(fs.readFileSync(result.jsonPath, 'utf8'));
+              return {
+                url: result.url,
+                performance: Math.round(report.categories.performance.score * 100),
+                accessibility: Math.round(report.categories.accessibility.score * 100),
+                bestPractices: Math.round(report.categories['best-practices'].score * 100),
+                seo: Math.round(report.categories.seo.score * 100),
+                pwa: Math.round(report.categories.pwa.score * 100),
+                lcp: Math.round(report.audits['largest-contentful-paint'].numericValue),
+                fcp: Math.round(report.audits['first-contentful-paint'].numericValue),
+                cls: report.audits['cumulative-layout-shift'].numericValue.toFixed(3),
+                tbt: Math.round(report.audits['total-blocking-time'].numericValue),
+                si: Math.round(report.audits['speed-index'].numericValue)
+              };
+            });
+            
+            // Create comment body
+            let comment = `## 🚦 Lighthouse CI Results (Node.js ${{ matrix.node-version }})\n\n`;
+            comment += `| URL | Performance | Accessibility | Best Practices | SEO | PWA |\n`;
+            comment += `|-----|-------------|---------------|----------------|-----|-----|\n`;
+            
+            results.forEach(result => {
+              const perfEmoji = result.performance >= 90 ? '🟢' : result.performance >= 50 ? '🟡' : '🔴';
+              const a11yEmoji = result.accessibility >= 90 ? '🟢' : result.accessibility >= 50 ? '🟡' : '🔴';
+              const bpEmoji = result.bestPractices >= 90 ? '🟢' : result.bestPractices >= 50 ? '🟡' : '🔴';
+              const seoEmoji = result.seo >= 90 ? '🟢' : result.seo >= 50 ? '🟡' : '🔴';
+              const pwaEmoji = result.pwa >= 90 ? '🟢' : result.pwa >= 50 ? '🟡' : '🔴';
+              
+              comment += `| ${result.url} | ${perfEmoji} ${result.performance} | ${a11yEmoji} ${result.accessibility} | ${bpEmoji} ${result.bestPractices} | ${seoEmoji} ${result.seo} | ${pwaEmoji} ${result.pwa} |\n`;
+            });
+            
+            comment += `\n### 📊 Core Web Vitals\n\n`;
+            comment += `| URL | LCP (ms) | FCP (ms) | CLS | TBT (ms) | SI (ms) |\n`;
+            comment += `|-----|----------|----------|-----|----------|----------|\n`;
+            
+            results.forEach(result => {
+              const lcpEmoji = result.lcp <= 2500 ? '🟢' : result.lcp <= 4000 ? '🟡' : '🔴';
+              const fcpEmoji = result.fcp <= 1800 ? '🟢' : result.fcp <= 3000 ? '🟡' : '🔴';
+              const clsEmoji = result.cls <= 0.1 ? '🟢' : result.cls <= 0.25 ? '🟡' : '🔴';
+              const tbtEmoji = result.tbt <= 200 ? '🟢' : result.tbt <= 600 ? '🟡' : '🔴';
+              const siEmoji = result.si <= 3400 ? '🟢' : result.si <= 5800 ? '🟡' : '🔴';
+              
+              comment += `| ${result.url} | ${lcpEmoji} ${result.lcp} | ${fcpEmoji} ${result.fcp} | ${clsEmoji} ${result.cls} | ${tbtEmoji} ${result.tbt} | ${siEmoji} ${result.si} |\n`;
+            });
+            
+            comment += `\n---\n`;
+            comment += `🟢 Good | 🟡 Needs Improvement | 🔴 Poor\n`;
+            comment += `\n*Lighthouse CI run on Node.js ${{ matrix.node-version }}*`;
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  performance-regression-check:
+    runs-on: ubuntu-latest
+    needs: lighthouse-ci
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download Lighthouse results
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-results-20.x
+          path: ./current-results
+
+      - name: Check for performance regressions
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Performance thresholds
+          const thresholds = {
+            performance: 80,
+            lcp: 2500,
+            fcp: 1800,
+            cls: 0.1,
+            tbt: 200,
+            si: 3400
+          };
+          
+          // Read current results
+          const manifestPath = './current-results/.lighthouseci/manifest.json';
+          if (!fs.existsSync(manifestPath)) {
+            console.log('No current results found');
+            process.exit(0);
+          }
+          
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          let hasRegressions = false;
+          let regressionDetails = [];
+          
+          manifest.forEach(result => {
+            const report = JSON.parse(fs.readFileSync(result.jsonPath, 'utf8'));
+            const scores = {
+              performance: Math.round(report.categories.performance.score * 100),
+              lcp: Math.round(report.audits['largest-contentful-paint'].numericValue),
+              fcp: Math.round(report.audits['first-contentful-paint'].numericValue),
+              cls: report.audits['cumulative-layout-shift'].numericValue,
+              tbt: Math.round(report.audits['total-blocking-time'].numericValue),
+              si: Math.round(report.audits['speed-index'].numericValue)
+            };
+            
+            // Check for regressions
+            Object.entries(thresholds).forEach(([metric, threshold]) => {
+              if (metric === 'performance' && scores[metric] < threshold) {
+                hasRegressions = true;
+                regressionDetails.push(\`❌ \${result.url}: Performance score (\${scores[metric]}) below threshold (\${threshold})\`);
+              } else if (metric !== 'performance' && metric !== 'cls' && scores[metric] > threshold) {
+                hasRegressions = true;
+                regressionDetails.push(\`❌ \${result.url}: \${metric.toUpperCase()} (\${scores[metric]}ms) above threshold (\${threshold}ms)\`);
+              } else if (metric === 'cls' && scores[metric] > threshold) {
+                hasRegressions = true;
+                regressionDetails.push(\`❌ \${result.url}: CLS (\${scores[metric]}) above threshold (\${threshold})\`);
+              }
+            });
+          });
+          
+          if (hasRegressions) {
+            console.log('🚨 Performance regressions detected:');
+            regressionDetails.forEach(detail => console.log(detail));
+            process.exit(1);
+          } else {
+            console.log('✅ No performance regressions detected');
+          }
+          "
+
+      - name: Fail on performance regression
+        if: failure()
+        run: |
+          echo "::error::Performance regressions detected. Please optimize before merging."
+          exit 1
+
+  lighthouse-budget-check:
+    runs-on: ubuntu-latest
+    needs: lighthouse-ci
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download Lighthouse results
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-results-20.x
+          path: ./lighthouse-results
+
+      - name: Check performance budgets
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Performance budgets (in bytes)
+          const budgets = {
+            'resource-summary:document:size': 50000,
+            'resource-summary:script:size': 500000,
+            'resource-summary:stylesheet:size': 100000,
+            'resource-summary:image:size': 1000000,
+            'resource-summary:font:size': 200000
+          };
+          
+          const manifestPath = './lighthouse-results/.lighthouseci/manifest.json';
+          if (!fs.existsSync(manifestPath)) {
+            console.log('No results found');
+            process.exit(0);
+          }
+          
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          let budgetExceeded = false;
+          
+          manifest.forEach(result => {
+            const report = JSON.parse(fs.readFileSync(result.jsonPath, 'utf8'));
+            
+            Object.entries(budgets).forEach(([audit, budget]) => {
+              if (report.audits[audit] && report.audits[audit].numericValue > budget) {
+                budgetExceeded = true;
+                const sizeMB = (report.audits[audit].numericValue / 1024 / 1024).toFixed(2);
+                const budgetMB = (budget / 1024 / 1024).toFixed(2);
+                console.log(\`❌ \${result.url}: \${audit} (\${sizeMB}MB) exceeds budget (\${budgetMB}MB)\`);
+              }
+            });
+          });
+          
+          if (budgetExceeded) {
+            console.log('🚨 Performance budgets exceeded');
+            process.exit(1);
+          } else {
+            console.log('✅ All performance budgets within limits');
+          }
+          "
+
+      - name: Generate performance report
+        run: |
+          echo "## 📊 Performance Budget Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Performance budgets checked successfully." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Budget Limits:" >> $GITHUB_STEP_SUMMARY
+          echo "- Document size: 50KB" >> $GITHUB_STEP_SUMMARY
+          echo "- JavaScript size: 500KB" >> $GITHUB_STEP_SUMMARY
+          echo "- CSS size: 100KB" >> $GITHUB_STEP_SUMMARY
+          echo "- Image size: 1MB" >> $GITHUB_STEP_SUMMARY
+          echo "- Font size: 200KB" >> $GITHUB_STEP_SUMMARY
